@@ -1,26 +1,858 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  /* Madmonos palette — spec */
+  --mad-base: #3a1d36;
+  --mad-deep: #562c52;
+  --mad-accent: #9c70b2;
+  /* Lavender family */
+  --mad-highlight: #e3d0ea;
+  /* Aura gold — brightened for ≥4.5:1 on plum / void surfaces */
+  --mad-gold: #c9ae55;
+  --mad-gold-dark: #b08f38;
+  /* Darker gold on --mad-mist / light cards (≥4.5:1) */
+  --mad-gold-high-contrast: #7a631d;
+  /* Accent tone readable on light surfaces (labels / small caps) */
+  --mad-accent-high-contrast: #5e4b10;
+  /* Dark plum body for white / mist cards (≥4.5:1) */
+  --mad-text-on-light-body: #2a1828;
+  /* Küçük metin / meta — açık zeminde AAA hedefi */
+  --mad-text-aaa-on-light: #181018;
+  --mad-neutral: #d9d9d8;
+  /* Midnight voids & surfaces (no stray hex in components) */
+  --mad-void: #060308;
+  --mad-mist: #efe8f4;
+  --mad-plane-light: #f2ebf6;
+  --mad-glass-base: #0a050a;
+  /* Cinematic mesh mid-tones (plum / orchid) — use in gradients only */
+  --mad-mesh-plum-warm: #5c2f58;
+  --mad-mesh-plum-cool: #4a2650;
+  --mad-mesh-orchid: #714878;
+  --mad-mesh-corner: #3f2042;
+  /* Near-highlight chips (preloader accents) */
+  --mad-surface-light: #f5edf8;
+  /* Masks & elevation */
+  --mad-mask-core: #000000;
+  --mad-mask-mid: rgba(0, 0, 0, 0.58);
+  --mad-shadow-elevated: 0 16px 40px rgba(0, 0, 0, 0.38);
+  --mad-shadow-chip: 0 8px 28px rgba(0, 0, 0, 0.4);
+  --mad-shadow-modal: 0 40px 120px rgba(0, 0, 0, 0.55);
+  --mad-ring-glow-gold: 0 0 18px rgba(201, 174, 85, 0.55),
+    inset 0 0 12px rgba(201, 174, 85, 0.15);
+  --mad-ring-glow-accent: 0 0 22px rgba(156, 112, 178, 0.55),
+    inset 0 0 14px rgba(156, 112, 178, 0.22);
+  --mad-label-glow-hot: 0 0 1px var(--mad-highlight), 0 0 14px rgba(227, 208, 234, 0.55),
+    0 0 26px rgba(156, 112, 178, 0.4);
+  --mad-cta-shadow-circle: 0 20px 64px rgba(201, 174, 85, 0.45);
+  --mad-cta-shadow-pill: 0 16px 48px rgba(201, 174, 85, 0.35);
+  --mad-fab-shadow: 0 12px 40px rgba(0, 0, 0, 0.45);
+
+  /* Buzlu sınırlar / cam — raw white/black opacity utility yerine */
+  --mad-border-subtle: rgba(255, 255, 255, 0.06);
+  --mad-border-heavy: rgba(255, 255, 255, 0.14);
+  --mad-glass-overlay: rgba(255, 255, 255, 0.08);
+  /* Açık kart / mist üzerinde ikincil metin (≈AA küçük punto) */
+  --mad-text-on-light-muted: #5c4868;
+  /* Nirvana / slate lock — Lighthouse AAA on koyu zemin (solid, opacity yok) */
+  --mad-text-aaa-primary: #f8fafc;
+  --mad-text-aaa-body: #cbd5e1;
+  --mad-text-aaa-gold: #c9ae55;
+  /* Eski isimler (theme eşlemesi) — aynı hedef kontrast */
+  --mad-text-aaa-on-dark: var(--mad-text-aaa-primary);
+  --mad-text-aaa-on-dark-body: var(--mad-text-aaa-body);
+  /* Mist / kart üstü küçük meta (≥4.5:1) */
+  --mad-text-insight-meta: #0f172a;
+  --mad-text-disabled: #8b8494;
+
+  /* Component borders (replaces opacity Tailwind border-mad-* utilities) */
+  --mad-border-gold-faint: rgba(201, 174, 85, 0.15);
+  --mad-border-gold-soft: rgba(201, 174, 85, 0.22);
+  --mad-border-gold-muted: rgba(201, 174, 85, 0.25);
+  --mad-border-gold-dim: rgba(201, 174, 85, 0.3);
+  --mad-border-gold-mid: rgba(201, 174, 85, 0.35);
+  --mad-border-gold-strong: rgba(201, 174, 85, 0.4);
+  --mad-border-gold-selected: rgba(201, 174, 85, 0.55);
+  --mad-border-gold-hover: rgba(201, 174, 85, 0.45);
+  --mad-border-gold-focus: rgba(201, 174, 85, 0.5);
+  --mad-border-gold-ring: rgba(201, 174, 85, 0.9);
+  --mad-border-accent-faint: rgba(156, 112, 178, 0.15);
+  --mad-border-accent-soft: rgba(156, 112, 178, 0.2);
+  --mad-border-accent-mid: rgba(156, 112, 178, 0.25);
+  --mad-border-accent-strong: rgba(156, 112, 178, 0.3);
+  --mad-border-accent-heavy: rgba(156, 112, 178, 0.35);
+  --mad-border-accent-bold: rgba(156, 112, 178, 0.4);
+  --mad-border-accent-hover: rgba(156, 112, 178, 0.45);
+  --mad-border-highlight-faint: rgba(227, 208, 234, 0.1);
+  --mad-border-highlight-soft: rgba(227, 208, 234, 0.15);
+  --mad-border-highlight-mid: rgba(227, 208, 234, 0.2);
+  --mad-border-highlight-strong: rgba(227, 208, 234, 0.25);
+  --mad-border-highlight-heavy: rgba(227, 208, 234, 0.3);
+
+  /* TSX’ten taşınan efekt token’ları (tek kaynak) */
+  --mad-shadow-nav-ring: 0 0 0 1px rgba(201, 174, 85, 0.12);
+  --mad-grad-sticky-gold-mist: rgba(201, 174, 85, 0.14);
+  --mad-grad-sticky-highlight-mist: rgba(227, 208, 234, 0.09);
+  --mad-inset-rail-seam: inset 1px 0 0 rgba(227, 208, 234, 0.05);
+  --mad-text-stroke-beautiful: rgba(227, 208, 234, 0.55);
+  --mad-text-shadow-beautiful-glow: 0 0 40px rgba(227, 208, 234, 0.08);
+  --mad-text-shadow-systems-primary: 0 0 48px rgba(201, 174, 85, 0.25), 0 2px 24px rgba(0, 0, 0, 0.45);
+  --mad-filter-drop-systems: drop-shadow(0 0 15px rgba(201, 174, 85, 0.4));
+  --mad-text-shadow-marquee-gold: 0 0 40px rgba(201, 174, 85, 0.25);
+  --mad-shadow-cta-gold-pill: 0 8px 32px rgba(201, 174, 85, 0.25);
+  --mad-shadow-insight-card: 0 18px 48px rgba(58, 29, 54, 0.08);
+  --mad-text-shadow-service-headline: 0 0 20px rgba(227, 208, 234, 0.22), 0 0 40px rgba(58, 29, 54, 0.45),
+    0 1px 6px rgba(0, 0, 0, 0.35);
+  --mad-cursor-radial-core: radial-gradient(
+    circle at center,
+    rgba(156, 112, 178, 0.38) 0%,
+    rgba(86, 44, 82, 0.2) 42%,
+    transparent 72%
+  );
+  --mad-cursor-label-glow: 0 0 12px rgba(201, 174, 85, 0.5);
+  --mad-char-scan-line-light: rgba(255, 255, 255, 0.045);
+  --mad-char-scan-line-plum: rgba(62, 29, 58, 0.04);
+  --mad-shadow-app-shell: 0 32px 120px rgba(0, 0, 0, 0.45);
+  --mad-radial-flower-gold: rgba(201, 174, 85, 0.08);
+  --mad-drop-image-deep: 0 12px 40px rgba(0, 0, 0, 0.45);
+  --mad-drop-impact-back: 0 20px 50px rgba(0, 0, 0, 0.5);
+  --mad-drop-impact-front: 0 24px 60px rgba(0, 0, 0, 0.45);
+  --mad-filter-xray-cyan: contrast(1.2) brightness(0.94) saturate(0.45) hue-rotate(165deg)
+    drop-shadow(0 0 14px rgba(56, 189, 248, 0.38));
+  --mad-vignette-edge: radial-gradient(ellipse 85% 75% at 50% 45%, transparent 0%, rgba(26, 10, 22, 0.38) 100%);
+  --mad-shadow-stats-card: 0 12px 48px rgba(0, 0, 0, 0.4);
+  --mad-text-shadow-spot-kicker: 0 0 40px rgba(227, 208, 234, 0.2), 0 1px 2px rgba(0, 0, 0, 0.4);
+  --mad-text-shadow-member-name: 0 0 32px rgba(227, 208, 234, 0.2), 0 0 2px rgba(201, 174, 85, 0.35),
+    0 10px 40px rgba(0, 0, 0, 0.6);
+  --mad-spot-void-orb: radial-gradient(
+    ellipse 95% 62% at 50% 108%,
+    rgba(72, 32, 88, 0.55) 0%,
+    rgba(20, 8, 24, 0.22) 42%,
+    transparent 72%
+  );
+  --mad-spot-stage-plane-bg: linear-gradient(
+    183deg,
+    rgba(8, 4, 10, 0) 0%,
+    rgba(14, 6, 18, 0.72) 45%,
+    rgba(6, 2, 8, 0.98) 100%
+  );
+  --mad-spot-stage-fade-mask: linear-gradient(to bottom, transparent 0%, rgba(0, 0, 0, 0.5) 18%, black 36%, black 100%);
+  --mad-spot-beam-gold: radial-gradient(
+    ellipse 13% 90% at 50% 0%,
+    rgba(201, 174, 85, 0.42) 0%,
+    rgba(201, 174, 85, 0.2) 14%,
+    rgba(201, 174, 85, 0.07) 26%,
+    rgba(201, 174, 85, 0.02) 34%,
+    transparent 42%,
+    transparent 100%
+  );
+  --mad-spot-beam-warm: radial-gradient(ellipse 70% 88% at 50% 0%, rgba(255, 232, 180, 0.14) 0%, transparent 55%);
+  --mad-impact-sql-glow: 0 0 28px rgba(201, 174, 85, 0.55), 0 0 60px rgba(201, 174, 85, 0.2);
+  --mad-impact-pipeline-glow: 0 0 24px rgba(74, 222, 128, 0.35), 0 0 48px rgba(201, 174, 85, 0.35);
+  --mad-impact-tech-grid-24: linear-gradient(rgba(201, 174, 85, 0.04) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(201, 174, 85, 0.04) 1px, transparent 1px);
+  --mad-impact-scan-lines: repeating-linear-gradient(
+    0deg,
+    transparent,
+    transparent 2px,
+    rgba(201, 174, 85, 0.12) 2px,
+    rgba(201, 174, 85, 0.12) 3px
+  );
+  --mad-impact-dual-wash: linear-gradient(180deg, rgba(201, 174, 85, 0.2) 0%, transparent 45%, transparent 55%, rgba(56, 189, 248, 0.14) 100%);
+  --mad-impact-fine-grid: linear-gradient(rgba(201, 174, 85, 0.07) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(56, 189, 248, 0.09) 1px, transparent 1px);
+  /* Solid surfaces — UI text uses `text-mad-aaa-*` only (no Tailwind opacity on copy). */
+  /* ~25% plum wash equivalent over void — solid, no child text. */
+  --mad-surface-hero-wash: #453047;
+  --mad-surface-panel-plum: #4a2646;
+  --mad-surface-modal-input: #3a1d36;
+  --mad-surface-gold-select: #433826;
+  --mad-surface-mist-card: var(--mad-mist);
+  --mad-impact-terminal-muted: #5c4a2a;
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+.mad-footer-cta-vignette {
+  background: linear-gradient(
+    to bottom,
+    var(--mad-base) 0%,
+    transparent 42%,
+    transparent 58%,
+    var(--mad-base) 100%
+  );
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+.mad-hero-scrim {
+  background-color: var(--mad-surface-hero-wash);
+}
+
+/* Team spotlight — arka plan katmanları (inline rgba yok) */
+.mad-spot-void-orb {
+  background: var(--mad-spot-void-orb);
+}
+.mad-spot-stage-plane {
+  background: var(--mad-spot-stage-plane-bg);
+  mask-image: var(--mad-spot-stage-fade-mask);
+  -webkit-mask-image: var(--mad-spot-stage-fade-mask);
+}
+.mad-spot-beam-gold {
+  background: var(--mad-spot-beam-gold);
+  mix-blend-mode: screen;
+}
+.mad-spot-beam-warm {
+  background: var(--mad-spot-beam-warm);
+  mix-blend-mode: soft-light;
+}
+
+/* Impact section — grid / scan (inline style kaldırıldı) */
+.mad-impact-tech-grid-24 {
+  background-image: var(--mad-impact-tech-grid-24);
+  background-size: 24px 24px;
+}
+.mad-impact-scan-overlay {
+  background-image: var(--mad-impact-scan-lines);
+}
+.mad-impact-dual-wash-bg {
+  background: var(--mad-impact-dual-wash);
+}
+.mad-impact-fine-grid-10 {
+  background-image: var(--mad-impact-fine-grid);
+  background-size: 10px 10px;
+}
+
+.mad-cursor-wash-bg {
+  background-image: var(--mad-cursor-radial-core);
+}
+
+/* Custom cursor — interactive “hot” state */
+.mad-cursor-ring-el {
+  box-shadow: var(--mad-ring-glow-gold);
+}
+.mad-cursor-ring-el.mad-cursor-ring--hot {
+  border-color: var(--mad-accent) !important;
+  box-shadow: var(--mad-ring-glow-accent);
+}
+.mad-cursor-label.mad-cursor-label--hot {
+  color: var(--mad-highlight);
+  text-shadow: var(--mad-label-glow-hot);
+}
+
+/*
+ * Footer CTA — yükseklik içeriğe göre büyüsün; aspect-ratio + max-height + overflow
+ * birlikte döndürülmüş marquee ve dairesel CTA’yı kırpıyordu.
+ */
+.mad-footer-cta-shell {
+  min-height: 22rem;
+  padding-bottom: max(1.5rem, env(safe-area-inset-bottom, 0px));
+}
+@media (min-width: 768px) {
+  .mad-footer-cta-shell {
+    min-height: 24rem;
+  }
+}
+.mad-footer-touch-arc {
+  min-height: max(5.5rem, min(11vw, 8.5rem));
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Hero `h1` + nav wordmark: aynı Montserrat 300 (font-light), synthesis kapalı */
+.mad-wordmark {
+  font-family: var(--font-montserrat), ui-sans-serif, system-ui, sans-serif;
+  font-weight: 300;
+  font-synthesis: none;
+  line-height: 0.85;
+  color: var(--mad-text-aaa-primary);
+  letter-spacing: -0.012em;
+  -webkit-font-smoothing: antialiased;
+}
+@media (min-width: 768px) {
+  .mad-wordmark {
+    letter-spacing: 0.02em;
   }
 }
 
+@theme inline {
+  --color-mad-base: var(--mad-base);
+  --color-mad-deep: var(--mad-deep);
+  --color-mad-accent: var(--mad-accent);
+  --color-mad-highlight: var(--mad-highlight);
+  --color-mad-gold: var(--mad-gold);
+  --color-mad-gold-dark: var(--mad-gold-dark);
+  --color-mad-gold-high-contrast: var(--mad-gold-high-contrast);
+  --color-mad-accent-high-contrast: var(--mad-accent-high-contrast);
+  --color-mad-text-on-light-body: var(--mad-text-on-light-body);
+  --color-mad-aaa-on-light: var(--mad-text-aaa-on-light);
+  --color-mad-neutral: var(--mad-neutral);
+  --color-mad-void: var(--mad-void);
+  --color-mad-mist: var(--mad-mist);
+  --color-mad-plane-light: var(--mad-plane-light);
+  --color-mad-glass-base: var(--mad-glass-base);
+  --color-mad-text-on-light-muted: var(--mad-text-on-light-muted);
+  --color-mad-aaa-primary: var(--mad-text-aaa-primary);
+  --color-mad-aaa-body: var(--mad-text-aaa-body);
+  --color-mad-aaa-gold: var(--mad-text-aaa-gold);
+  --color-mad-text-disabled: var(--mad-text-disabled);
+  --font-sans: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: var(--font-geist-mono), ui-monospace, monospace;
+  /* Condensed display — Oswald via layout `display.variable` */
+  --font-family-display: var(--font-display), ui-sans-serif, system-ui, sans-serif;
+}
+
+html {
+  scroll-behavior: auto;
+  overflow-x: hidden;
+}
+
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background-color: var(--mad-base);
+  color: var(--mad-neutral);
+  font-family: var(--font-sans);
+  transition: background-color 0.45s ease-out;
+}
+
+body.site-plane-light {
+  background-color: var(--mad-plane-light);
+}
+
+body.site-plane-light #main-scroll-surface {
+  background-color: var(--mad-plane-light);
+}
+
+@media (pointer: fine) {
+  body.mad-cursor-ring,
+  body.mad-cursor-ring button,
+  body.mad-cursor-ring a[href],
+  body.mad-cursor-ring input,
+  body.mad-cursor-ring textarea,
+  body.mad-cursor-ring select,
+  body.mad-cursor-ring [role="button"] {
+    cursor: none !important;
+  }
+}
+
+/* Opacity + scaleY only (composited); avoids animating box-shadow. */
+@keyframes mad-scan-hum {
+  0%,
+  100% {
+    opacity: 1;
+    transform: translateY(-50%) scaleY(1);
+  }
+  50% {
+    opacity: 0.88;
+    transform: translateY(-50%) scaleY(3);
+  }
+}
+
+.mad-scan-hum {
+  transform-origin: center;
+  animation: mad-scan-hum 2.05s ease-in-out infinite;
+  will-change: opacity, transform;
+}
+
+/* Hero statik arka plan: mesh / Ken Burns / shimmer hareketi yok. */
+.hero-static-bg .mad-cinematic-mesh,
+.hero-static-bg .mad-cinematic-photo,
+.hero-static-bg .mad-video-shimmer {
+  animation: none !important;
+  will-change: auto;
+}
+
+/* Horizontal services: pin sırasında üst parent overflow kısıtlamasını aş */
+section.horizontal-scroll-section#services {
+  overflow: visible !important;
+}
+
+/* Outline display type (horizontal services) */
+.mad-headline-outline {
+  -webkit-text-stroke: 2px currentColor;
+  -webkit-text-fill-color: transparent;
+  color: var(--mad-highlight);
+}
+
+@media (min-width: 768px) {
+  .mad-headline-outline {
+    -webkit-text-stroke-width: 3px;
+  }
+}
+
+/* Nav: underline grows from center */
+.nav-link-reveal {
+  position: relative;
+}
+.nav-link-reveal::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  bottom: -5px;
+  height: 1px;
+  width: 100%;
+  max-width: 100%;
+  background: linear-gradient(90deg, transparent, var(--mad-gold), transparent);
+  transform: translateX(-50%) scaleX(0);
+  transform-origin: center;
+  transition: transform 0.38s cubic-bezier(0.22, 1, 0.36, 1);
+  pointer-events: none;
+}
+.nav-link-reveal:hover::after,
+.nav-link-reveal:focus-visible::after {
+  transform: translateX(-50%) scaleX(1);
+}
+
+/* Fullscreen nav overlay: two-line label motion (anim-a / anim-sub-a — paired with .nav-link-reveal) */
+.nav-overlay-link.nav-link-reveal::after {
+  bottom: 0.2rem;
+}
+.nav-overlay-anim-main {
+  transition: transform 0.45s cubic-bezier(0.22, 1, 0.36, 1), color 0.35s ease;
+}
+.nav-overlay-anim-sub {
+  transition: transform 0.5s cubic-bezier(0.22, 1, 0.36, 1), color 0.35s ease;
+}
+.nav-overlay-link:hover .nav-overlay-anim-main,
+.nav-overlay-link:focus-visible .nav-overlay-anim-main {
+  transform: translateY(-3px);
+  color: var(--mad-highlight);
+}
+.nav-overlay-link:hover .nav-overlay-anim-sub,
+.nav-overlay-link:focus-visible .nav-overlay-anim-sub {
+  transform: translateY(-2px);
+  color: var(--mad-gold);
+}
+@media (prefers-reduced-motion: reduce) {
+  .nav-overlay-anim-main,
+  .nav-overlay-anim-sub {
+    transition: none;
+  }
+  .nav-overlay-link:hover .nav-overlay-anim-main,
+  .nav-overlay-link:focus-visible .nav-overlay-anim-main,
+  .nav-overlay-link:hover .nav-overlay-anim-sub,
+  .nav-overlay-link:focus-visible .nav-overlay-anim-sub {
+    transform: none;
+  }
+}
+
+/* Film grain — single fixed layer, GPU-friendly */
+.mad-grain {
+  opacity: 0.045;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  mix-blend-mode: overlay;
+}
+
+/* Gorilla mark breathing aura */
+.gorilla-aura {
+  animation: gorilla-breathe 5.5s ease-in-out infinite;
+  will-change: transform, opacity;
+}
+
+@keyframes gorilla-breathe {
+  0%,
+  100% {
+    transform: scale(1) translate3d(0, 0, 0);
+    opacity: 0.85;
+  }
+  50% {
+    transform: scale(1.12) translate3d(0, 0, 0);
+    opacity: 1;
+  }
+}
+
+/* Hero / AI rail — cinematic placeholder (no video asset) */
+@keyframes mad-cinematic-mesh {
+  0%,
+  100% {
+    background-position: 0% 45%;
+  }
+  50% {
+    background-position: 100% 55%;
+  }
+}
+
+.mad-cinematic-mesh {
+  background: linear-gradient(
+    122deg,
+    var(--mad-deep) 0%,
+    var(--mad-mesh-plum-warm) 18%,
+    var(--mad-accent) 42%,
+    var(--mad-mesh-plum-cool) 68%,
+    var(--mad-base) 88%,
+    var(--mad-deep) 100%
+  );
+  background-size: 380% 380%;
+  animation: mad-cinematic-mesh 24s ease-in-out infinite;
+  will-change: background-position;
+}
+
+@keyframes mad-cinematic-ken {
+  0%,
+  100% {
+    transform: scale(1.06) translate3d(-1.5%, -1%, 0);
+  }
+  50% {
+    transform: scale(1.14) translate3d(1.5%, 0.8%, 0);
+  }
+}
+
+.mad-cinematic-photo {
+  animation: mad-cinematic-ken 26s ease-in-out infinite;
+  will-change: transform;
+}
+
+/* Infinite marquee — transform-only */
+@keyframes mad-marquee {
+  0% {
+    transform: translate3d(0, 0, 0);
+  }
+  100% {
+    transform: translate3d(-50%, 0, 0);
+  }
+}
+
+.mad-marquee-track {
+  animation: mad-marquee 48s linear infinite;
+  will-change: transform;
+}
+
+/* Stack (#marquee): reduced motion → single wrapped row, no duplicate column */
+@media (prefers-reduced-motion: reduce) {
+  .mad-marquee-track {
+    animation: none;
+    transform: none !important;
+    display: flex;
+    flex-wrap: wrap;
+    width: 100% !important;
+    max-width: 56rem;
+    margin-inline: auto;
+    justify-content: center;
+    column-gap: 0.65rem;
+    row-gap: 0.65rem;
+  }
+  .mad-marquee-segment--dup {
+    display: none !important;
+  }
+  .mad-marquee-segment {
+    flex-wrap: wrap;
+    justify-content: center;
+    width: auto;
+    padding-right: 0 !important;
+  }
+}
+
+/* Footer — wave marquee: hafif tilt; aşırı scale taşmayı ve kırpmayı artırırdı */
+.footer-touch-arc {
+  transform: rotate(-1.25deg) scale(1.01);
+  transform-origin: center center;
+}
+
+.footer-touch-track {
+  animation: footer-touch-marquee 52s linear infinite;
+  will-change: transform;
+}
+
+@keyframes footer-touch-marquee {
+  0% {
+    transform: translate3d(0, 0, 0);
+  }
+  12.5% {
+    transform: translate3d(-6.25%, 8px, 0);
+  }
+  25% {
+    transform: translate3d(-12.5%, 0, 0);
+  }
+  37.5% {
+    transform: translate3d(-18.75%, 10px, 0);
+  }
+  50% {
+    transform: translate3d(-25%, 2px, 0);
+  }
+  62.5% {
+    transform: translate3d(-31.25%, 9px, 0);
+  }
+  75% {
+    transform: translate3d(-37.5%, 0, 0);
+  }
+  87.5% {
+    transform: translate3d(-43.75%, 6px, 0);
+  }
+  100% {
+    transform: translate3d(-50%, 0, 0);
+  }
+}
+
+.footer-wave-inner {
+  animation: footer-wave-float 3.4s ease-in-out infinite;
+  will-change: transform;
+}
+
+@keyframes footer-wave-float {
+  0%,
+  100% {
+    transform: translate3d(0, 0, 0);
+  }
+  50% {
+    transform: translate3d(0, 12px, 0);
+  }
+}
+
+/* ─── Projects (StickySolutions) — media rail: static mesh (no bg-position anim = cheaper paints) ─── */
+.sticky-sol-media-mesh {
+  background: linear-gradient(
+    122deg,
+    var(--mad-deep) 0%,
+    var(--mad-mesh-plum-warm) 16%,
+    var(--mad-accent) 38%,
+    var(--mad-mesh-orchid) 50%,
+    var(--mad-mesh-plum-cool) 70%,
+    var(--mad-mesh-corner) 88%,
+    var(--mad-deep) 100%
+  );
+  transform: translateZ(0);
+}
+
+.sticky-sol-media-rail-bridge {
+  background: linear-gradient(
+    90deg,
+    rgba(58, 29, 54, 0) 0%,
+    rgba(58, 29, 54, 0.35) 45%,
+    var(--mad-base) 100%
+  );
+  transform: translateZ(0);
+}
+
+/* Letterbox alanını kasıtlı “vitrin” gibi göster; maliyet: tek pseudo katman */
+.sticky-sol-card-vignette {
+  position: relative;
+}
+.sticky-sol-card-vignette::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  pointer-events: none;
+  border-radius: inherit;
+  background: radial-gradient(
+    ellipse 85% 78% at 50% 48%,
+    transparent 0%,
+    transparent 42%,
+    rgba(26, 10, 22, 0.38) 100%
+  );
+  mix-blend-mode: multiply;
+}
+
+/* Iris: surface hafifçe “nefes alır” (opacity ile aynı scroll sürücüsü) */
+.sticky-sol-iris-surface {
+  transform: translate3d(0, 0, 0) scale(calc(1.008 - 0.008 * var(--dual-reveal, 0)));
+}
+
+/* İki sütun seam — altın okuma çizgisi (desktop grid) */
+@media (min-width: 1024px) {
+  .sticky-sol-column-seam {
+    box-shadow: inset -1px 0 0 var(--mad-border-gold-soft),
+      -6px 0 24px -8px rgba(201, 174, 85, 0.12);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .footer-wave-inner {
+    animation: none;
+  }
+  .mad-cinematic-mesh,
+  .mad-cinematic-photo {
+    animation: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .footer-touch-track {
+    animation: none;
+  }
+  .mad-marquee-track {
+    animation: none;
+  }
+  .gorilla-aura {
+    animation: none;
+  }
+  .animate-mad-float,
+  .mad-code-scroll,
+  .mad-flow-dash,
+  .mad-video-shimmer {
+    animation: none !important;
+  }
+}
+
+/* ─── Panel texture (StickySolutions media shells) ─── */
+.mad-grain-panel {
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='gn'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23gn)'/%3E%3C/svg%3E");
+  mix-blend-mode: overlay;
+}
+
+/* faux 4K scan / shimmer */
+.mad-video-shimmer {
+  background: linear-gradient(
+    105deg,
+    transparent 40%,
+    rgba(201, 174, 85, 0.15) 50%,
+    transparent 60%
+  );
+  background-size: 200% 200%;
+  animation: mad-shimmer 5s ease-in-out infinite;
+}
+@keyframes mad-shimmer {
+  0% {
+    background-position: 80% 50%;
+  }
+  100% {
+    background-position: 20% 50%;
+  }
+}
+
+@keyframes mad-float {
+  0%,
+  100% {
+    transform: translate3d(0, 0, 0) scale(1);
+    opacity: 0.55;
+  }
+  50% {
+    transform: translate3d(6px, -18px, 0) scale(1.12);
+    opacity: 1;
+  }
+}
+.animate-mad-float {
+  animation-name: mad-float;
+  animation-timing-function: ease-in-out;
+  animation-iteration-count: infinite;
+}
+
+/* code whisper — vertical drift faster than scroll rhythm */
+@keyframes mad-code-drift {
+  0% {
+    transform: translate3d(0, 0, 0);
+  }
+  100% {
+    transform: translate3d(0, -50%, 0);
+  }
+}
+.mad-code-scroll {
+  animation: mad-code-drift 22s linear infinite;
+  will-change: transform;
+}
+
+/* automation flow */
+@keyframes mad-dash {
+  0% {
+    stroke-dashoffset: 120;
+  }
+  100% {
+    stroke-dashoffset: 0;
+  }
+}
+.mad-flow-dash {
+  stroke-dasharray: 12 14;
+  animation: mad-dash 3.5s ease-in-out infinite alternate;
+}
+.mad-flow-node {
+  animation: mad-node-glow 2.2s ease-in-out infinite;
+}
+@keyframes mad-node-glow {
+  0%,
+  100% {
+    opacity: 0.65;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+@keyframes mad-node-ring {
+  0% {
+    opacity: 0;
+    transform: scale(0.92);
+  }
+  40% {
+    opacity: 0.35;
+  }
+  100% {
+    opacity: 0;
+    transform: scale(1.06);
+  }
+}
+.mad-node-pulse {
+  box-shadow: 0 0 0 0 rgba(201, 174, 85, 0.35);
+  animation: mad-node-ring 2.8s ease-out infinite;
+}
+
+/* CTA — Digital Present-style inversion on hover/focus (GPU-safe) */
+.cta-digital-present {
+  transition:
+    mix-blend-mode 0.2s ease,
+    transform 0.22s ease,
+    box-shadow 0.22s ease;
+}
+.cta-digital-present:hover,
+.cta-digital-present:focus-visible {
+  mix-blend-mode: difference;
+}
+.cta-digital-present:focus-visible {
+  outline: 2px solid rgba(227, 208, 234, 0.5);
+  outline-offset: 2px;
+}
+@media (prefers-reduced-motion: reduce) {
+  .cta-digital-present,
+  .cta-digital-present:hover,
+  .cta-digital-present:focus-visible {
+    mix-blend-mode: normal;
+    transition: none;
+  }
+}
+
+@keyframes madSheetUp {
+  from {
+    opacity: 0;
+    transform: translate3d(0, 14px, 0);
+  }
+  to {
+    opacity: 1;
+    transform: translate3d(0, 0, 0);
+  }
+}
+
+/*
+ * Mobil hero mesh: gradient katmanı GPU’da translate ile kayar (background-position reflow yapmaz).
+ */
+.mad-hero-css-mesh {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  background-color: var(--mad-base);
+  contain: layout paint;
+}
+
+.mad-hero-css-mesh::before {
+  content: "";
+  position: absolute;
+  left: -25%;
+  top: -25%;
+  width: 150%;
+  height: 150%;
+  will-change: transform;
+  transform: translate3d(0, 0, 0);
+  background:
+    radial-gradient(ellipse 120% 85% at 28% 18%, rgba(113, 72, 120, 0.45) 0%, transparent 55%),
+    radial-gradient(ellipse 90% 75% at 88% 78%, rgba(92, 47, 88, 0.42) 0%, transparent 52%),
+    radial-gradient(ellipse 100% 60% at 52% 50%, rgba(74, 38, 80, 0.35) 0%, transparent 48%);
+  animation: madHeroMeshDrift 22s ease-in-out infinite alternate;
+}
+
+@keyframes madHeroMeshDrift {
+  0% {
+    transform: translate3d(-6%, -5%, 0);
+  }
+  100% {
+    transform: translate3d(6%, 5%, 0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .mad-hero-css-mesh::before {
+    animation: none;
+    transform: translate3d(0, 0, 0);
+    will-change: auto;
+  }
 }

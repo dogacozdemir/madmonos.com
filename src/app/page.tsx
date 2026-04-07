@@ -1,65 +1,100 @@
-import Image from "next/image";
+import dynamic from "next/dynamic";
+import { Nav } from "@/components/nav";
+import { HeroMaskedDigitalPresent } from "@/components/hero-masked-digital-present";
+import { SolutionsSemantic } from "@/components/solutions-semantic";
 
+const StickySolutions = dynamic(
+  () => import("@/components/sticky-solutions").then((m) => m.StickySolutions),
+  {
+    ssr: true,
+    loading: () => (
+      <section
+        id="projects"
+        className="relative z-[30] min-h-[min(58dvh,30rem)] w-full border-y border-[color:var(--mad-border-accent-faint)] bg-mad-base"
+        aria-label="Selected client work and project lines"
+      />
+    ),
+  }
+);
+
+const SpotlightTeamStage = dynamic(
+  () => import("@/components/team/spotlight-team-stage").then((m) => m.SpotlightTeamStage),
+  {
+    ssr: true,
+    loading: () => (
+      <section
+        className="min-h-[85vh] w-full bg-mad-void"
+        aria-hidden
+      />
+    ),
+  }
+);
+
+const LatestNews = dynamic(
+  () => import("@/components/latest-news").then((m) => m.LatestNews),
+  {
+    ssr: true,
+    loading: () => (
+      <section className="min-h-[40vh] w-full bg-mad-mist" aria-hidden />
+    ),
+  }
+);
+
+const TypographyImpactSection = dynamic(
+  () => import("@/components/typography-impact-section").then((m) => m.TypographyImpactSection),
+  {
+    ssr: true,
+    loading: () => (
+      <section className="min-h-[70vh] w-full bg-mad-void" aria-hidden />
+    ),
+  }
+);
+
+const HorizontalServiceScroll = dynamic(
+  () => import("@/components/horizontal-service-scroll").then((m) => m.HorizontalServiceScroll),
+  {
+    ssr: true,
+    loading: () => (
+      <section
+        id="services"
+        className="min-h-[100vh] w-full bg-mad-base"
+        aria-hidden
+      />
+    ),
+  }
+);
+
+const MarTechMarquee = dynamic(
+  () => import("@/components/martech-marquee").then((m) => m.MarTechMarquee),
+  {
+    ssr: true,
+    loading: () => (
+      <section className="min-h-[8rem] w-full bg-mad-void" aria-hidden />
+    ),
+  }
+);
+
+/**
+ * Hero + sticky projects stay eager (LCP). Team, impact, services rail, insights, marquee lazy-hydrate with ssr.
+ */
 export default function Home() {
   return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
+    <>
+      <Nav />
+      <main className="relative z-[2]">
+        <HeroMaskedDigitalPresent />
+        <StickySolutions />
+        <SpotlightTeamStage />
+        <TypographyImpactSection />
+        <div
+          className="impact-services-buffer relative z-[12] min-h-[min(14svh,120px)] w-full bg-mad-deep [transform:translate3d(0,0,0)]"
+          aria-hidden
         />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
-        </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
-        </div>
+        <HorizontalServiceScroll />
+        <LatestNews />
+        <SolutionsSemantic />
+        <MarTechMarquee />
       </main>
-    </div>
+    </>
   );
 }
