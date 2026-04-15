@@ -930,3 +930,49 @@ section.horizontal-scroll-section#services {
   }
 }
 
+/* Mobile hero entry animations — GPU-composited (opacity + transform only) */
+@keyframes mad-hero-mob-up {
+  from {
+    opacity: 0;
+    transform: translate3d(0, 18px, 0);
+  }
+  to {
+    opacity: 1;
+    transform: translate3d(0, 0, 0);
+  }
+}
+
+@keyframes mad-hero-mob-scroll {
+  0%,
+  100% {
+    opacity: 0.3;
+    transform: scaleY(0.6);
+  }
+  50% {
+    opacity: 0.9;
+    transform: scaleY(1);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  [style*="mad-hero-mob-up"],
+  [class*="mad-hero-mob-up"],
+  [class*="mad-hero-mob-scroll"] {
+    animation: none !important;
+    opacity: 1 !important;
+    transform: none !important;
+  }
+}
+
+/* System Pulse — status dot breathe animation (GPU-composited: opacity + transform only) */
+@keyframes mad-pulse-dot {
+  0%,
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.3;
+    transform: scale(0.55);
+  }
+}

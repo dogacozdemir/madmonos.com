@@ -39,8 +39,16 @@ export async function POST(req: Request) {
   const ip = getRequestIp(req);
   if (!allowByRateLimit(ip, now)) {
     return NextResponse.json(
-      { ok: false, message: "Too many requests. Please try again shortly." },
-      { status: 429 }
+      {
+        ok: false,
+        message:
+          "We've received several requests from your connection. Please wait 30 seconds and try again.",
+        retryAfter: 30,
+      },
+      {
+        status: 429,
+        headers: { "Retry-After": "30" },
+      }
     );
   }
 
@@ -84,7 +92,11 @@ export async function POST(req: Request) {
     return NextResponse.json({ ok: true, leadId: submission.id }, { status: 201 });
   } catch {
     return NextResponse.json(
-      { ok: false, message: "Lead delivery failed. Please retry." },
+      {
+        ok: false,
+        message:
+          "Our system encountered a brief hiccup. Your details are safe — please try once more.",
+      },
       { status: 502 }
     );
   }

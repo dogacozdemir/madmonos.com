@@ -1,5 +1,6 @@
 import { DIGITAL_PRESENT_PROJECTS } from "@/data/digital-present-projects";
 import { MAD_STICKY_SLIDES } from "@/data/mad-genius-copy";
+import { TEAM_MEMBERS } from "@/data/team-spotlight";
 import {
   SITE_DESCRIPTION,
   SITE_NAME,
@@ -72,8 +73,32 @@ type ContactPointLd = {
   availableLanguage: readonly string[];
 };
 
+type PersonLd = {
+  "@type": "Person";
+  "@id": string;
+  name: string;
+  jobTitle: string;
+  description: string;
+  worksFor: { "@id": string };
+};
+
+type OfferCatalogLd = {
+  "@type": "OfferCatalog";
+  name: string;
+  itemListElement: readonly {
+    "@type": "Offer";
+    itemOffered: {
+      "@type": "Service";
+      "@id": string;
+      name: string;
+      description: string;
+      provider: { "@id": string };
+    };
+  }[];
+};
+
 type OrganizationLd = {
-  "@type": "Organization";
+  "@type": readonly ["Organization", "ProfessionalService"];
   "@id": string;
   name: string;
   url: string;
@@ -82,6 +107,8 @@ type OrganizationLd = {
   slogan: string;
   areaServed: string;
   knowsAbout: readonly string[];
+  member?: readonly { "@id": string }[];
+  hasOfferCatalog?: OfferCatalogLd;
   contactPoint?: readonly ContactPointLd[];
   sameAs?: readonly string[];
 };
@@ -179,6 +206,7 @@ type ProjectCreativeLd = {
 
 type JsonLdGraph = readonly (
   | OrganizationLd
+  | PersonLd
   | WebSiteLd
   | WebPageLd
   | FAQPageLd
@@ -225,8 +253,19 @@ export function StructuredData() {
     };
   });
 
+  const personNodes: PersonLd[] = TEAM_MEMBERS.map((m) => ({
+    "@type": "Person",
+    "@id": `${SITE_URL}/#person-${m.id}`,
+    name: m.name,
+    jobTitle: m.title,
+    description: m.bio,
+    worksFor: { "@id": organizationId },
+  }));
+
+  const aiServiceBase = `${SITE_URL}/#ai-service`;
+
   const orgNode = {
-    "@type": "Organization" as const,
+    "@type": ["Organization", "ProfessionalService"] as const,
     "@id": organizationId,
     name: SITE_NAME,
     url: SITE_URL,
@@ -254,6 +293,68 @@ export function StructuredData() {
       "Go-to-market acceleration",
       "MarTech integration",
     ],
+    member: personNodes.map((p) => ({ "@id": p["@id"] })),
+    hasOfferCatalog: {
+      "@type": "OfferCatalog",
+      name: "Madmonos AI-First Services",
+      itemListElement: [
+        {
+          "@type": "Offer",
+          itemOffered: {
+            "@type": "Service",
+            "@id": `${aiServiceBase}-geo`,
+            name: "Generative Engine Optimization (GEO)",
+            description:
+              "Structured brand signals, semantic schema markup, and content architecture that ensure accurate AI-search representation across Perplexity, ChatGPT Search, Gemini, and Claude surfaces.",
+            provider: { "@id": organizationId },
+          },
+        },
+        {
+          "@type": "Offer",
+          itemOffered: {
+            "@type": "Service",
+            "@id": `${aiServiceBase}-avatars`,
+            name: "AI Avatar Production",
+            description:
+              "Scalable synthetic presenter and spokesperson video production using state-of-the-art AI avatar platforms, reducing production time 70–90% versus traditional video shoots.",
+            provider: { "@id": organizationId },
+          },
+        },
+        {
+          "@type": "Offer",
+          itemOffered: {
+            "@type": "Service",
+            "@id": `${aiServiceBase}-automation`,
+            name: "Automated Marketing Workflow Architecture",
+            description:
+              "Custom workflow design using n8n, Make, and Zapier plus API-level CRM, CDP, and ERP integrations to automate lead routing, campaign triggers, and real-time performance reporting.",
+            provider: { "@id": organizationId },
+          },
+        },
+        {
+          "@type": "Offer",
+          itemOffered: {
+            "@type": "Service",
+            "@id": `${aiServiceBase}-creative`,
+            name: "AI Creative Engine",
+            description:
+              "AI-assisted pipeline producing 6–20+ high-volume on-brand static and video ad creatives per sprint across Meta, Google, and TikTok formats.",
+            provider: { "@id": organizationId },
+          },
+        },
+        {
+          "@type": "Offer",
+          itemOffered: {
+            "@type": "Service",
+            "@id": `${aiServiceBase}-dashboards`,
+            name: "AI-Driven Real-Time Dashboards",
+            description:
+              "Custom analytics interfaces built on GA4, Meta Pixel, and custom data layers that replace static monthly reports with live, actionable decision-support dashboards.",
+            provider: { "@id": organizationId },
+          },
+        },
+      ],
+    } satisfies OfferCatalogLd,
     contactPoint: [
       {
         "@type": "ContactPoint",
@@ -348,6 +449,7 @@ export function StructuredData() {
         item: { "@id": `${SITE_URL}/#project-${p.id}` },
       })),
     } satisfies ItemListProjectsLd,
+    ...personNodes,
     ...projectNodes,
   ] as const satisfies JsonLdGraph;
 

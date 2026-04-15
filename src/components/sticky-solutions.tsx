@@ -3,7 +3,6 @@
 import Image from "next/image";
 import { useEffect, useRef, useState } from "react";
 import { DIGITAL_PRESENT_PROJECTS } from "@/data/digital-present-projects";
-import { scheduleScrollTriggerRefresh } from "@/lib/schedule-st-refresh";
 import { cn } from "@/lib/utils";
 import { KineticProjectRailMobile } from "@/components/kinetic-project-rail-mobile";
 

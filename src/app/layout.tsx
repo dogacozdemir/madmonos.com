@@ -5,7 +5,7 @@ import "./globals.css";
 import { Providers } from "@/components/providers/providers";
 import { AppShell } from "@/components/layout/app-shell";
 import { CRITICAL_INLINE_CSS } from "@/lib/critical-styles";
-import { SITE_DESCRIPTION, SITE_NAME, SITE_OG_IMAGE, SITE_URL } from "@/lib/site";
+import { SITE_DESCRIPTION, SITE_NAME, SITE_URL } from "@/lib/site";
 
 const SiteFooter = dynamic(() => import("@/components/site-footer").then((m) => m.SiteFooter), {
   ssr: true,
@@ -84,20 +84,14 @@ export const metadata: Metadata = {
     siteName: SITE_NAME,
     title: `${SITE_NAME} — AI-native agency for GTM speed`,
     description: SITE_DESCRIPTION,
-    images: [
-      {
-        url: SITE_OG_IMAGE,
-        width: 1200,
-        height: 630,
-        alt: "Madmonos brand mark — AI marketing and MarTech agency focused on go-to-market velocity",
-      },
-    ],
+    // Dynamic OG image is served by src/app/opengraph-image.tsx (edge runtime).
+    // Route-level generateMetadata overrides this for blog posts and case studies.
   },
   twitter: {
     card: "summary_large_image",
-    title: `${SITE_NAME} — AI marketing & MarTech`,
+    title: `${SITE_NAME} — AI Marketing & MarTech`,
     description: SITE_DESCRIPTION,
-    images: [SITE_OG_IMAGE],
+    // twitter-image falls back to opengraph-image automatically.
   },
   alternates: {
     canonical: SITE_URL,

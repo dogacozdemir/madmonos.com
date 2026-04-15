@@ -24,6 +24,7 @@ export function HeroMaskedDigitalPresent() {
   const [videoUnlock, setVideoUnlock] = useState(false);
   const [loadedCols, setLoadedCols] = useState<boolean[]>(() => HERO_VIDEOS.map((_, i) => i === 0));
   const [failedCols, setFailedCols] = useState<boolean[]>(() => HERO_VIDEOS.map(() => false));
+  const [mobileVideoPlaying, setMobileVideoPlaying] = useState(false);
 
   useEffect(() => {
     const mql = window.matchMedia("(max-width: 767px)");
@@ -50,7 +51,7 @@ export function HeroMaskedDigitalPresent() {
 
     const unlock = () => setVideoUnlock(true);
     const onFirstInteraction = () => unlock();
-    const fallbackId: number = window.setTimeout(unlock, 2600);
+    const fallbackId: number = window.setTimeout(unlock, 800);
 
     // Start video only after user intent or LCP to protect first paint.
     window.addEventListener("pointerdown", onFirstInteraction, { once: true, passive: true });
@@ -265,17 +266,21 @@ export function HeroMaskedDigitalPresent() {
         )}
       >
         <div className="relative min-h-[100svh] w-full overflow-hidden md:hidden">
-          {failedCols[0] ? (
-            <Image
-              src={HERO_VIDEOS[0].poster}
-              alt=""
-              fill
-              sizes="100vw"
-              className="absolute inset-0 h-full w-full object-cover"
-              priority
-              aria-hidden
-            />
-          ) : (
+          {/* LCP-critical: always rendered with fetchpriority=high via next/image priority prop.
+              Fades to transparent once the video starts playing. */}
+          <Image
+            src={HERO_VIDEOS[0].poster}
+            alt=""
+            fill
+            sizes="100vw"
+            priority
+            className={cn(
+              "absolute inset-0 h-full w-full object-cover transition-opacity duration-700",
+              mobileVideoPlaying && !failedCols[0] ? "opacity-0" : "opacity-100"
+            )}
+            aria-hidden
+          />
+          {!failedCols[0] && (
             <video
               className="absolute inset-0 h-full w-full object-cover"
               src={isMobile && loadedCols[0] && heroReady ? HERO_VIDEOS[0].src : undefined}
@@ -284,7 +289,8 @@ export function HeroMaskedDigitalPresent() {
               muted
               loop
               playsInline
-              preload={heroReady ? "metadata" : "none"}
+              preload="metadata"
+              onPlay={() => setMobileVideoPlaying(true)}
               onError={() => {
                 setFailedCols((prev) => {
                   if (prev[0]) return prev;

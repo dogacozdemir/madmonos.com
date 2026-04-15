@@ -2,14 +2,10 @@
 
 import Image from "next/image";
 import { useEffect, useLayoutEffect, useRef } from "react";
-import gsap from "gsap";
-import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { cn } from "@/lib/utils";
 import { TEAM_MEMBERS } from "@/data/team-spotlight";
 import { scheduleScrollTriggerRefresh } from "@/lib/schedule-st-refresh";
 import { useTeamSpotlightNav } from "@/components/providers/team-spotlight-nav-context";
-
-gsap.registerPlugin(ScrollTrigger);
 
 /**
  * Scroll progress 0 → 1 maps to floatIndex 0 → n-1 (equal snap stops across members).
@@ -67,11 +63,10 @@ export function SpotlightTeamStage() {
     let narrowLayoutActive = narrowMql.matches;
 
     let reducedIO: IntersectionObserver | null = null;
+    let cancelled = false;
+    let ctx: { revert: () => void } | undefined;
 
-    /**
-     * Takım portrelerinin (ör. 400×400 WebP) boyalı piksellerinin X merkezi, pin yatay merkezine göre (px).
-     * Işın `pin` üzerinde `left-1/2 -translate-x-1/2` ile sabitlendiği için ölçüm de pin ile hizalı olmalı.
-     */
+    /** Portrait X-center relative to pin center (px) — no GSAP needed. */
     const updateCenters = () => {
       const pr = pin.getBoundingClientRect();
       const pinCX = pr.left + pr.width / 2;
@@ -85,196 +80,197 @@ export function SpotlightTeamStage() {
       });
     };
 
-    /** Işın kayması: karakter merkezine (pin merkezinden px offset) */
-    const spotlightX = (progress: number) => {
-      const centers = centersRef.current;
-      if (centers.length < n) return 0;
-      const f = progress * (n - 1);
-      const i0 = Math.min(n - 1, Math.max(0, Math.floor(f)));
-      const i1 = Math.min(n - 1, i0 + 1);
-      const t = f - i0;
-      return gsap.utils.interpolate(centers[i0]!, centers[i1]!, t);
-    };
+    const raf = requestAnimationFrame(() => {
+      void (async () => {
+        const [{ default: gsap }, { ScrollTrigger }] = await Promise.all([
+          import("gsap"),
+          import("gsap/ScrollTrigger"),
+        ]);
+        if (cancelled) return;
+        gsap.registerPlugin(ScrollTrigger);
 
-    const applyMemberAndText = (progress: number) => {
-      const floatIndex = progress * (n - 1);
-      const mobile = mobileLayoutActive;
-      const narrow = narrowLayoutActive;
+        /** Beam offset: interpolate between portrait centers as progress sweeps. */
+        const spotlightX = (progress: number) => {
+          const centers = centersRef.current;
+          if (centers.length < n) return 0;
+          const f = progress * (n - 1);
+          const i0 = Math.min(n - 1, Math.max(0, Math.floor(f)));
+          const i1 = Math.min(n - 1, i0 + 1);
+          const t = f - i0;
+          return gsap.utils.interpolate(centers[i0]!, centers[i1]!, t);
+        };
 
-      const styleFigure = (el: HTMLElement | null, i: number) => {
-        if (!el) return;
-        const w = dwellWeight(i, floatIndex);
-        const gray = 1 - w;
-        const op = 0.1 + 0.9 * w;
-        const sc = 1 + (narrow || mobile ? 0.11 : 0.18) * w;
-        const br = 1 + 0.2 * w;
-        gsap.set(el, {
-          filter: `grayscale(${gray}) brightness(${br})`,
-          opacity: op,
-          scale: sc,
-          transformOrigin: "50% 98%",
-          force3D: true,
-        });
-      };
+        const applyMemberAndText = (progress: number) => {
+          const floatIndex = progress * (n - 1);
+          const mobile = mobileLayoutActive;
+          const narrow = narrowLayoutActive;
 
-      const track = mobileTrackRef.current;
-
-      if (mobile) {
-        if (track) gsap.set(track, { xPercent: -progress * ((n - 1) / n) * 100, x: 0 });
-        gsap.set(beamMove, { x: 0 });
-        mobileMemberRefs.current.forEach((el, i) => styleFigure(el, i));
-        memberRefs.current.forEach((el) => {
-          if (!el) return;
-          gsap.set(el, { clearProps: "opacity,filter,scale" });
-        });
-      } else {
-        if (track) gsap.set(track, { xPercent: 0, x: 0 });
-        updateCenters();
-        gsap.set(beamMove, { x: spotlightX(progress) });
-        memberRefs.current.forEach((el, i) => styleFigure(el, i));
-        mobileMemberRefs.current.forEach((el) => {
-          if (!el) return;
-          gsap.set(el, { clearProps: "opacity,filter,scale" });
-        });
-      }
-
-      textBlockRefs.current.forEach((el, i) => {
-        if (!el) return;
-        const d = Math.abs(floatIndex - i);
-        gsap.set(el, {
-          xPercent: (i - floatIndex) * 100,
-          opacity: 1,
-          y: 0,
-          force3D: true,
-          pointerEvents: d < 0.52 ? "auto" : "none",
-        });
-        el.setAttribute("aria-hidden", d > 0.52 ? "true" : "false");
-      });
-    };
-
-    const ctx = gsap.context(() => {
-      const mobileInit = mobileLayoutActive;
-      gsap.set(beamMove, { x: mobileInit ? 0 : spotlightX(0) });
-      if (mobileTrackRef.current)
-        gsap.set(mobileTrackRef.current, { xPercent: 0, x: 0 });
-
-      memberRefs.current.forEach((el) => {
-        if (!el) return;
-        gsap.set(el, {
-          opacity: 0.1,
-          filter: "grayscale(1) brightness(1)",
-          scale: 1,
-          transformOrigin: "50% 98%",
-          force3D: true,
-        });
-      });
-
-      mobileMemberRefs.current.forEach((el) => {
-        if (!el) return;
-        gsap.set(el, {
-          opacity: 0.1,
-          filter: "grayscale(1) brightness(1)",
-          scale: 1,
-          transformOrigin: "50% 98%",
-          force3D: true,
-        });
-      });
-
-      textBlockRefs.current.forEach((el, i) => {
-        if (!el) return;
-        gsap.set(el, {
-          xPercent: (i - 0) * 100,
-          opacity: 1,
-          y: 0,
-        });
-      });
-
-      if (reduced) {
-        const mob = mobileLayoutActive;
-        if (mob) {
-          gsap.set(beamMove, { x: 0 });
-          if (mobileTrackRef.current) gsap.set(mobileTrackRef.current, { xPercent: 0 });
-          mobileMemberRefs.current.forEach((el, i) => {
+          const styleFigure = (el: HTMLElement | null, i: number) => {
             if (!el) return;
-            const on = i === 0;
+            const w = dwellWeight(i, floatIndex);
+            const gray = 1 - w;
+            const op = 0.1 + 0.9 * w;
+            const sc = 1 + (narrow || mobile ? 0.11 : 0.18) * w;
+            const br = 1 + 0.2 * w;
             gsap.set(el, {
-              filter: on
-                ? "grayscale(0) brightness(1.2)"
-                : "grayscale(1) brightness(1)",
-              opacity: on ? 1 : 0.1,
-              scale: on ? 1.18 : 1,
+              filter: `grayscale(${gray}) brightness(${br})`,
+              opacity: op,
+              scale: sc,
               transformOrigin: "50% 98%",
+              force3D: true,
+            });
+          };
+
+          const track = mobileTrackRef.current;
+
+          if (mobile) {
+            if (track) gsap.set(track, { xPercent: -progress * ((n - 1) / n) * 100, x: 0 });
+            gsap.set(beamMove, { x: 0 });
+            mobileMemberRefs.current.forEach((el, i) => styleFigure(el, i));
+            memberRefs.current.forEach((el) => {
+              if (!el) return;
+              gsap.set(el, { clearProps: "opacity,filter,scale" });
+            });
+          } else {
+            if (track) gsap.set(track, { xPercent: 0, x: 0 });
+            updateCenters();
+            gsap.set(beamMove, { x: spotlightX(progress) });
+            memberRefs.current.forEach((el, i) => styleFigure(el, i));
+            mobileMemberRefs.current.forEach((el) => {
+              if (!el) return;
+              gsap.set(el, { clearProps: "opacity,filter,scale" });
+            });
+          }
+
+          textBlockRefs.current.forEach((el, i) => {
+            if (!el) return;
+            const d = Math.abs(floatIndex - i);
+            gsap.set(el, {
+              xPercent: (i - floatIndex) * 100,
+              opacity: 1,
+              y: 0,
+              force3D: true,
+              pointerEvents: d < 0.52 ? "auto" : "none",
+            });
+            el.setAttribute("aria-hidden", d > 0.52 ? "true" : "false");
+          });
+        };
+
+        ctx = gsap.context(() => {
+          const mobileInit = mobileLayoutActive;
+          gsap.set(beamMove, { x: mobileInit ? 0 : spotlightX(0) });
+          if (mobileTrackRef.current)
+            gsap.set(mobileTrackRef.current, { xPercent: 0, x: 0 });
+
+          memberRefs.current.forEach((el) => {
+            if (!el) return;
+            gsap.set(el, {
+              opacity: 0.1,
+              filter: "grayscale(1) brightness(1)",
+              scale: 1,
+              transformOrigin: "50% 98%",
+              force3D: true,
             });
           });
-        } else {
-          updateCenters();
-          gsap.set(beamMove, { x: spotlightX(0) });
-          memberRefs.current.forEach((el, i) => {
+
+          mobileMemberRefs.current.forEach((el) => {
             if (!el) return;
-            const on = i === 0;
             gsap.set(el, {
-              filter: on
-                ? "grayscale(0) brightness(1.2)"
-                : "grayscale(1) brightness(1)",
-              opacity: on ? 1 : 0.1,
-              scale: on ? 1.18 : 1,
+              opacity: 0.1,
+              filter: "grayscale(1) brightness(1)",
+              scale: 1,
               transformOrigin: "50% 98%",
+              force3D: true,
             });
           });
+
+          textBlockRefs.current.forEach((el, i) => {
+            if (!el) return;
+            gsap.set(el, { xPercent: i * 100, opacity: 1, y: 0 });
+          });
+
+          if (reduced) {
+            const mob = mobileLayoutActive;
+            if (mob) {
+              gsap.set(beamMove, { x: 0 });
+              if (mobileTrackRef.current) gsap.set(mobileTrackRef.current, { xPercent: 0 });
+              mobileMemberRefs.current.forEach((el, i) => {
+                if (!el) return;
+                const on = i === 0;
+                gsap.set(el, {
+                  filter: on ? "grayscale(0) brightness(1.2)" : "grayscale(1) brightness(1)",
+                  opacity: on ? 1 : 0.1,
+                  scale: on ? 1.18 : 1,
+                  transformOrigin: "50% 98%",
+                });
+              });
+            } else {
+              updateCenters();
+              gsap.set(beamMove, { x: spotlightX(0) });
+              memberRefs.current.forEach((el, i) => {
+                if (!el) return;
+                const on = i === 0;
+                gsap.set(el, {
+                  filter: on ? "grayscale(0) brightness(1.2)" : "grayscale(1) brightness(1)",
+                  opacity: on ? 1 : 0.1,
+                  scale: on ? 1.18 : 1,
+                  transformOrigin: "50% 98%",
+                });
+              });
+            }
+            textBlockRefs.current.forEach((el, i) => {
+              if (!el) return;
+              const on = i === 0;
+              gsap.set(el, { xPercent: i * 100, opacity: on ? 1 : 0, y: 0 });
+              el.setAttribute("aria-hidden", on ? "false" : "true");
+            });
+            return;
+          }
+
+          gsap.timeline({
+            scrollTrigger: {
+              trigger: section,
+              start: "top top",
+              end: "bottom bottom",
+              pin,
+              pinSpacing: true,
+              scrub: 1.15,
+              snap: mobileLayout
+                ? undefined
+                : {
+                    snapTo: Array.from({ length: n }, (_, i) => i / Math.max(1, n - 1)),
+                    duration: { min: 0.28, max: 0.62 },
+                    delay: 0.04,
+                    ease: "power3.inOut",
+                  },
+              invalidateOnRefresh: true,
+              refreshPriority: -2,
+              anticipatePin: 0,
+              onUpdate: (self) => applyMemberAndText(self.progress),
+              onRefresh: (self) => { applyMemberAndText(self.progress); },
+              onEnter: () => setTeamSpotlightActive(true),
+              onLeave: () => setTeamSpotlightActive(false),
+              onEnterBack: () => setTeamSpotlightActive(true),
+              onLeaveBack: () => setTeamSpotlightActive(false),
+            },
+          });
+
+          requestAnimationFrame(() => { applyMemberAndText(0); });
+        }, section);
+
+        if (reduced) {
+          reducedIO = new IntersectionObserver(
+            ([e]) => {
+              setTeamSpotlightActive(!!(e?.isIntersecting && e.intersectionRatio > 0.04));
+            },
+            { threshold: [0, 0.04, 0.12] }
+          );
+          reducedIO.observe(section);
         }
-        textBlockRefs.current.forEach((el, i) => {
-          if (!el) return;
-          const on = i === 0;
-          gsap.set(el, { xPercent: i * 100, opacity: on ? 1 : 0, y: 0 });
-          el.setAttribute("aria-hidden", on ? "false" : "true");
-        });
-        return;
-      }
 
-      gsap.timeline({
-        scrollTrigger: {
-          trigger: section,
-          start: "top top",
-          end: "bottom bottom",
-          pin,
-          pinSpacing: true,
-          scrub: 1.15,
-          snap: mobileLayout
-            ? undefined
-            : {
-                snapTo: Array.from({ length: n }, (_, i) => i / Math.max(1, n - 1)),
-                duration: { min: 0.28, max: 0.62 },
-                delay: 0.04,
-                ease: "power3.inOut",
-              },
-          invalidateOnRefresh: true,
-          refreshPriority: -2,
-          anticipatePin: 0,
-          onUpdate: (self) => applyMemberAndText(self.progress),
-          onRefresh: (self) => {
-            applyMemberAndText(self.progress);
-          },
-          onEnter: () => setTeamSpotlightActive(true),
-          onLeave: () => setTeamSpotlightActive(false),
-          onEnterBack: () => setTeamSpotlightActive(true),
-          onLeaveBack: () => setTeamSpotlightActive(false),
-        },
-      });
-
-      requestAnimationFrame(() => {
-        applyMemberAndText(0);
-      });
-    }, section);
-
-    if (reduced) {
-      reducedIO = new IntersectionObserver(
-        ([e]) => {
-          setTeamSpotlightActive(!!(e?.isIntersecting && e.intersectionRatio > 0.04));
-        },
-        { threshold: [0, 0.04, 0.12] }
-      );
-      reducedIO.observe(section);
-    }
+        scheduleScrollTriggerRefresh();
+      })();
+    });
 
     const onLayoutMediaChange = () => {
       mobileLayoutActive = mobileMql.matches;
@@ -284,13 +280,13 @@ export function SpotlightTeamStage() {
     mobileMql.addEventListener("change", onLayoutMediaChange);
     narrowMql.addEventListener("change", onLayoutMediaChange);
 
-    scheduleScrollTriggerRefresh();
-
     return () => {
+      cancelled = true;
+      cancelAnimationFrame(raf);
       mobileMql.removeEventListener("change", onLayoutMediaChange);
       narrowMql.removeEventListener("change", onLayoutMediaChange);
       setTeamSpotlightActive(false);
-      ctx.revert();
+      ctx?.revert();
       reducedIO?.disconnect();
     };
   }, [n, setTeamSpotlightActive]);
@@ -306,64 +302,68 @@ export function SpotlightTeamStage() {
 
     turb.setAttribute("baseFrequency", "0.01 0.01");
 
-    let tween: gsap.core.Tween | null = null;
-    const startTween = () => {
-      if (!desktopMql.matches || tween) return;
-      tween = gsap.to(turb, {
-        attr: { baseFrequency: "0.015 0.015" },
-        duration: 4.2,
-        repeat: -1,
-        yoyo: true,
-        ease: "sine.inOut",
-      });
-    };
+    let tween: { kill: () => void } | null = null;
+    let cancelled = false;
+    let innerCleanup: (() => void) | null = null;
+
     const stopTween = () => {
-      if (tween) {
-        tween.kill();
-        tween = null;
-      }
+      tween?.kill();
+      tween = null;
       turb.setAttribute("baseFrequency", "0.01 0.01");
     };
 
-    const io = new IntersectionObserver(
-      ([e]) => {
-        if (!desktopMql.matches) {
-          stopTween();
-          return;
-        }
-        if (e?.isIntersecting && e.intersectionRatio > 0.04) startTween();
-        else stopTween();
-      },
-      { threshold: [0, 0.04, 0.08] }
-    );
-    io.observe(section);
+    void import("gsap").then(({ default: gsap }) => {
+      if (cancelled) return;
 
-    const r = section.getBoundingClientRect();
-    if (
-      desktopMql.matches &&
-      r.bottom > 0 &&
-      r.top < window.innerHeight
-    ) {
-      startTween();
-    }
+      const startTween = () => {
+        if (!desktopMql.matches || tween) return;
+        tween = gsap.to(turb, {
+          attr: { baseFrequency: "0.015 0.015" },
+          duration: 4.2,
+          repeat: -1,
+          yoyo: true,
+          ease: "sine.inOut",
+        });
+      };
 
-    const onReduced = () => {
-      if (reducedMql.matches) stopTween();
-      else if (desktopMql.matches && section.getBoundingClientRect().bottom > 0)
+      const io = new IntersectionObserver(
+        ([e]) => {
+          if (!desktopMql.matches) { stopTween(); return; }
+          if (e?.isIntersecting && e.intersectionRatio > 0.04) startTween();
+          else stopTween();
+        },
+        { threshold: [0, 0.04, 0.08] }
+      );
+      io.observe(section);
+
+      const r = section.getBoundingClientRect();
+      if (desktopMql.matches && r.bottom > 0 && r.top < window.innerHeight) {
         startTween();
-    };
-    reducedMql.addEventListener("change", onReduced);
+      }
 
-    const onDesktop = () => {
-      if (!desktopMql.matches) stopTween();
-      else if (section.getBoundingClientRect().bottom > 0) startTween();
-    };
-    desktopMql.addEventListener("change", onDesktop);
+      const onReduced = () => {
+        if (reducedMql.matches) stopTween();
+        else if (desktopMql.matches && section.getBoundingClientRect().bottom > 0) startTween();
+      };
+      reducedMql.addEventListener("change", onReduced);
+
+      const onDesktop = () => {
+        if (!desktopMql.matches) stopTween();
+        else if (section.getBoundingClientRect().bottom > 0) startTween();
+      };
+      desktopMql.addEventListener("change", onDesktop);
+
+      innerCleanup = () => {
+        io.disconnect();
+        reducedMql.removeEventListener("change", onReduced);
+        desktopMql.removeEventListener("change", onDesktop);
+        stopTween();
+      };
+    });
 
     return () => {
-      io.disconnect();
-      reducedMql.removeEventListener("change", onReduced);
-      desktopMql.removeEventListener("change", onDesktop);
+      cancelled = true;
+      innerCleanup?.();
       stopTween();
     };
   }, []);
@@ -570,6 +570,7 @@ export function SpotlightTeamStage() {
                       `member-data-${i}`
                     )}
                     aria-hidden={i !== 0}
+                    style={{ transform: `translateX(${i === 0 ? 0 : 100}%)` }}
                   >
                     <div className="name-column min-w-0 -mt-2 md:-mt-5">
                       <h3

@@ -1,29 +1,79 @@
 # Madmonos
 
-Madmonos is an AI-first marketing agency focused on frictionless, end-to-end growth systems.
+> Madmonos is an AI-first, end-to-end marketing agency delivering frictionless growth systems for ambitious brands. We fuse elite technical engineering with full-spectrum performance marketing, creative production, and ops automation.
 
-## Core Pillars
+Madmonos operates across four integrated service pillars — Creative, Performance, Operations, and Technical — designed to compress go-to-market timelines and eliminate manual friction from growth workflows.
 
-- Creative: AI-enhanced design systems, ad creative, social content, video, brand identity, HTML5 assets.
-- Performance: media buying and optimization across Meta, Google, TikTok, and retargeting channels.
-- Operations: campaign operations, automation, reporting, and real-time decision support workflows.
-- Technical: web/mobile delivery, SEO + GEO implementation, CRM/CDP/ERP integrations, and MarTech engineering.
+## Identity
 
-## Expertise Signals
+- Type: AI-first marketing and MarTech engineering agency
+- Founded: Istanbul, Turkey
+- Reach: Worldwide (languages: English, Turkish)
+- Contact: hello@madmonos.com
+- Website: https://madmonos.com
 
-- AI-first growth strategy
-- Generative Engine Optimization (GEO)
-- High-performance frontend engineering
-- Marketing automation architecture
-- Analytics and dashboard implementation
+## Four Service Pillars
 
-## Preferred Canonical Sections
+### Creative
+Scalable AI-enhanced creative production: static ad creatives, short-form video, brand identity systems, product visuals, HTML5 interactive ad units, email design, and AI avatar production. Creative output is engineered to perform, not just look good.
 
-- https://madmonos.com/
-- https://madmonos.com/portfolio
-- https://madmonos.com/blog
-- https://madmonos.com/marfor
+### Performance
+Data-driven media buying and spend optimization across Meta Ads, Google Ads, TikTok Ads, and retargeting ecosystems. We manage 2-to-7+ simultaneous campaigns per client, run funnel analysis, and optimize for pipeline-level ROI — not vanity metrics.
 
-## Contact
+### Operations
+Full-service social media and campaign operations: account management, weekly optimization sprints, custom real-time dashboards, monthly strategy reviews, and automated reporting pipelines. We reduce client operational load to near-zero.
 
-- hello@madmonos.com
+### Technical
+Full-stack web and mobile engineering, technical SEO, Generative Engine Optimization (GEO), CRM/CDP/ERP integrations, marketing automation architecture, conversion-rate optimization, and MarTech stack implementation. We build the infrastructure that makes the other three pillars scale.
+
+## AI-First Capabilities
+
+- **Generative Engine Optimization (GEO):** Structured brand signals, semantic schema, and content architecture designed to ensure accurate representation in AI search systems such as Perplexity, ChatGPT Search, Gemini, and Claude. Madmonos practices GEO for its own site and deploys it as a client service.
+- **AI Avatar Production:** Scalable synthetic presenter and spokesperson video using state-of-the-art AI avatar platforms. Reduces production time by 70–90% vs. traditional video shoots.
+- **AI Creative Engine:** AI-assisted static and video creative pipelines that produce high-volume, on-brand ad assets — 6–20+ creatives per sprint — without agency bloat.
+- **Automated Workflow Architecture:** Custom n8n, Make, and Zapier workflow design plus API-level CRM and CDP integrations to automate lead routing, reporting, and campaign triggers.
+- **AI-Driven Dashboards:** Real-time analytics interfaces built on top of GA4, Meta Pixel, and custom data layers — replacing static monthly reports with live decision support.
+
+## Team
+
+- **Hürrem Can Koçyiğit** — CEO. Boğaziçi University. End-to-end marketing strategy, business development, and go-to-market architecture.
+- **Ensar Koçak** — Head of Product. Boğaziçi University. Frictionless operations, product management, and growth systems oversight.
+- **Uygar Doğaç Özdemir** — Head of Engineering. Near East University. Full-stack engineering, MarTech integrations, and technical architecture.
+- **Sefa Özkan** — Creative Director & Videographer. Bahçeşehir University. Video production, brand creative, content direction.
+- **Samet Köksal** — Performance Marketer & Product Analyst. Galatasaray University. Meta and Google Ads optimization, data analysis, and campaign scaling.
+
+## Unique Value Proposition
+
+Madmonos compresses three agency relationships into one: a performance-marketing desk, a creative studio, and a technical engineering team — all coordinated under a single account structure. Our AI-first toolchain means we deliver faster, at higher volume, and with more measurable accountability than traditional agencies.
+
+We do not resell SaaS tools. We build and operate integrated systems end-to-end, including custom code when off-the-shelf platforms fall short.
+
+## Service Packages
+
+- **Starter (Coverage Layer 01):** Baseline creative (6 static + 4 short video), Meta + Google 2–3 campaign structure, basic social management, Pixel/GA4 setup, 360 sales guidance.
+- **Growth (Coverage Layer 02):** 8 static + 8 short video + Brand Mono Setup, Meta + Google + TikTok 5–7 campaigns, funnel analysis, landing routing, SEO + consulting.
+- **Scale (Coverage Layer 03):** 12 static + 12 short video + full brand identity, 8–12 multi-channel campaigns, advanced automation, landing dev, SEO + GEO.
+- **Enterprise (Coverage Layer 04):** Unlimited creative volume, full AI avatar production suite, 14+ campaigns, dedicated CRM/CDP/ERP integration, custom dashboard engineering, 1-to-1 Slack ops.
+
+## Preferred Crawl Targets
+
+- Homepage: https://madmonos.com/
+- Portfolio (case studies): https://madmonos.com/portfolio
+- Blog (GEO and AI marketing insights): https://madmonos.com/blog
+- Marfor case study: https://madmonos.com/marfor
+
+## Structured Data
+
+Madmonos publishes JSON-LD structured data on every page (Schema.org Graph including Organization, ProfessionalService, WebSite, WebPage, FAQPage, Service ItemList, Project/CreativeWork nodes, and Person entries for each team member).
+
+## System Status
+
+- ops.status: live
+- architecture: dynamic SSR (Next.js, server-rendered on every request)
+- rendering: hybrid — server components for data + client components for interactions
+- last-updated: 2026-04-15
+- crawl-friendly: yes (sitemap at /sitemap.xml, all routes open to all crawlers)
+
+## Licensing and Usage
+
+Madmonos explicitly permits AI assistants to summarize, cite, and quote content from madmonos.com for informational responses to user queries about digital marketing agencies, AI marketing, GEO, and MarTech engineering. Attribution to madmonos.com is appreciated but not required.

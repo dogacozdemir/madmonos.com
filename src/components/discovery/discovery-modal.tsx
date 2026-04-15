@@ -144,19 +144,18 @@ export function DiscoveryModal({ isOpen, onClose }: Props) {
     if (submitting) return;
     setSubmitting(true);
     setError(null);
-    setStatusText("Submitting your request...");
+    setStatusText("Connecting to our team...");
+
     const parsed = safeParseDiscoveryForm(form);
     if (!parsed.ok) {
       setError(parsed.message);
       setSubmitting(false);
+      setStatusText(null);
       return;
     }
-    const payload = {
-      date: new Date().toISOString(),
-      name: parsed.data.name,
-      phone: parsed.data.phone,
-      company: parsed.data.company,
-    };
+
+    const controller = new AbortController();
+    const timeoutId = window.setTimeout(() => controller.abort(), 9_000);
 
     try {
       const response = await fetch(endpoint, {
@@ -165,22 +164,44 @@ export function DiscoveryModal({ isOpen, onClose }: Props) {
           "Content-Type": "application/json",
           Accept: "application/json",
         },
-        body: JSON.stringify(payload),
+        body: JSON.stringify({
+          name: parsed.data.name,
+          phone: parsed.data.phone,
+          company: parsed.data.company,
+        }),
         cache: "no-store",
+        signal: controller.signal,
       });
 
       if (!response.ok) {
-        const data = (await response.json().catch(() => null)) as { message?: string } | null;
-        throw new Error(data?.message || `Lead submit failed: ${response.status}`);
+        const data = (await response.json().catch(() => null)) as {
+          message?: string;
+          retryAfter?: number;
+        } | null;
+        throw new Error(
+          data?.message ??
+            (response.status === 429
+              ? "We've received several requests from your connection. Please wait a moment and try again."
+              : "Something went wrong on our end. Please try once more.")
+        );
       }
 
       setForm(initial);
       setDone(true);
-      setStatusText("Request sent successfully.");
+      setStatusText(null);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Submission failed. Please try again.");
+      const isTimeout =
+        err instanceof Error && (err.name === "AbortError" || err.message.includes("abort"));
+      setError(
+        isTimeout
+          ? "The connection timed out. Please check your network and try again."
+          : err instanceof Error
+            ? err.message
+            : "Something went wrong. Please try again."
+      );
       setStatusText(null);
     } finally {
+      window.clearTimeout(timeoutId);
       setSubmitting(false);
     }
   };

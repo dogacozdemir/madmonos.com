@@ -135,7 +135,7 @@ export function LatestNews({ posts }: { posts: BlogPost[] }) {
                     height={750}
                     quality={75}
                     className="h-full w-full object-cover transition-transform duration-700 ease-out group-hover:scale-[1.04]"
-                    sizes="(max-width: 768px) min(40vw, 360px), (max-width: 1280px) calc((100vw - 4rem) / 3), min(480px, 33vw)"
+                    sizes="(max-width: 768px) 92vw, (max-width: 1280px) calc((100vw - 4rem) / 3), min(480px, 33vw)"
                   />
                 ) : (
                   <div

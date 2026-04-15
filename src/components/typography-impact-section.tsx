@@ -2,12 +2,8 @@
 
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import Image from "next/image";
-import gsap from "gsap";
-import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { Activity, Box, Rocket, Shield } from "lucide-react";
 import { cn } from "@/lib/utils";
-
-gsap.registerPlugin(ScrollTrigger);
 
 type PackageItem = {
   id: string;
@@ -116,21 +112,16 @@ export function TypographyImpactSection() {
   const coreRef = useRef<HTMLDivElement>(null);
   const cardRefs = useRef<(HTMLElement | null)[]>([]);
   const terminalRefs = useRef<(HTMLPreElement | null)[]>([]);
-  const mobileRailRef = useRef<HTMLDivElement | null>(null);
   const [isMobile, setIsMobile] = useState(false);
-  const [reducedMotion, setReducedMotion] = useState(false);
-  const [mobileExpanded, setMobileExpanded] = useState<Record<string, boolean>>({});
+  const [reducedMotion] = useState(() =>
+    typeof window !== "undefined"
+      ? window.matchMedia("(prefers-reduced-motion: reduce)").matches
+      : false
+  );
   const packageTerminals = useMemo(
     () => PACKAGES.map((pkg, index) => terminalLinesFromFeatures(pkg, index).join("\n")),
     []
   );
-
-  const scrollMobileRailBy = (dir: "left" | "right") => {
-    const rail = mobileRailRef.current;
-    if (!rail) return;
-    const delta = Math.round(rail.clientWidth * 0.84) * (dir === "left" ? -1 : 1);
-    rail.scrollBy({ left: delta, behavior: "smooth" });
-  };
 
   useEffect(() => {
     const mql = window.matchMedia("(max-width: 767px)");
@@ -153,7 +144,6 @@ export function TypographyImpactSection() {
     }
 
     const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    setReducedMotion(reduced);
     if (reduced || isMobile) {
       terminalRefs.current.forEach((terminal, index) => {
         if (terminal) terminal.textContent = packageTerminals[index];
@@ -162,6 +152,18 @@ export function TypographyImpactSection() {
     }
 
     let rafId = 0;
+    let cancelled = false;
+    let ctx: { revert: () => void } | undefined;
+
+    const raf = requestAnimationFrame(() => {
+      void (async () => {
+        const [{ default: gsap }, { ScrollTrigger }] = await Promise.all([
+          import("gsap"),
+          import("gsap/ScrollTrigger"),
+        ]);
+        if (cancelled) return;
+        gsap.registerPlugin(ScrollTrigger);
+
     let targetProgress = 0;
     let frameProgress = 0;
     const cardMetrics: Array<{ width: number; height: number }> = [];
@@ -176,7 +178,7 @@ export function TypographyImpactSection() {
       });
     };
 
-    const ctx = gsap.context(() => {
+    ctx = gsap.context(() => {
       const motionHeavyAllowed = !window.matchMedia("(max-width: 767px)").matches;
       if (motionHeavyAllowed) {
         gsap.to(gridLayer, {
@@ -324,9 +326,14 @@ export function TypographyImpactSection() {
       setFrame(trigger.progress);
     }, section);
 
+      })(); // end async IIFE
+    }); // end requestAnimationFrame
+
     return () => {
+      cancelled = true;
+      cancelAnimationFrame(raf);
       window.cancelAnimationFrame(rafId);
-      ctx.revert();
+      ctx?.revert();
     };
   }, [isMobile, packageTerminals]);
 
@@ -409,125 +416,49 @@ export function TypographyImpactSection() {
         </h2>
 
         <div className="relative z-[4] w-full md:hidden">
-          <div className="mb-5 min-h-[8.25rem] px-1 sm:px-2">
+          <div className="mb-6 px-1 sm:px-2">
             <h3 className="mt-2 max-w-[18ch] font-[family-name:var(--font-display)] text-[clamp(1.3rem,6.8vw,2rem)] font-bold uppercase leading-[1.06] tracking-[-0.03em] text-mad-highlight">
               Our packages
             </h3>
-            <p className="mt-2 max-w-[34ch] text-[11px] font-medium leading-relaxed text-mad-aaa-body sm:text-xs">
-              Swipe through tier cards. Tap any card to switch between coverage snapshot and
-              package-delta notes.
-            </p>
           </div>
 
-          <div
-            ref={mobileRailRef}
-            className={cn(
-              "flex gap-3 overflow-x-auto overflow-y-hidden overscroll-x-contain pb-6 pl-1 pr-3 pt-1",
-              "snap-x snap-mandatory [-webkit-overflow-scrolling:touch]",
-              "[scrollbar-width:none] [&::-webkit-scrollbar]:h-0 [&::-webkit-scrollbar]:w-0",
-              "[touch-action:pan-x_pan-y]"
-            )}
-          >
+          <div className="flex flex-col gap-4 px-1 sm:px-2">
             {PACKAGES.map((pkg, index) => {
-              const expanded = !!mobileExpanded[pkg.id];
               const Icon = pkg.icon;
               return (
-                <button
-                  key={`mobile-${pkg.id}`}
-                  type="button"
-                  onClick={() =>
-                    setMobileExpanded((prev) => ({ ...prev, [pkg.id]: !prev[pkg.id] }))
-                  }
-                  className={cn(
-                    "snap-center shrink-0 text-left",
-                    "h-[min(60dvh,30rem)] min-h-[24rem] max-h-[30rem] w-[min(92vw,24rem)]",
-                    "rounded-2xl",
-                    "focus-visible:ring-2 focus-visible:ring-[color:var(--mad-border-gold-ring)]",
-                    "active:scale-[0.988] motion-reduce:active:scale-100",
-                    "transition-transform duration-150 ease-out"
-                  )}
+                <div
+                  key={pkg.id}
+                  className="rounded-2xl border border-[color:var(--mad-border-gold-dim)] bg-[color:var(--mad-surface-panel-plum)] px-5 py-5 shadow-[var(--mad-shadow-elevated)] [transform:translate3d(0,0,0)]"
                 >
-                  <div
-                    className={cn(
-                      "relative h-full w-full [transform-style:preserve-3d] will-change-transform",
-                      "transition-[transform] duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] motion-reduce:transition-none",
-                      expanded && "[transform:rotateY(180deg)]"
-                    )}
-                    style={{ transformStyle: "preserve-3d" }}
-                  >
-                    <div
-                      className={cn(
-                        "absolute inset-0 flex h-full flex-col rounded-2xl border border-[color:var(--mad-border-gold-dim)] bg-[color:var(--mad-surface-panel-plum)] px-4 pb-4 pt-3.5 shadow-[var(--mad-shadow-elevated)]",
-                        "[backface-visibility:hidden] [transform:rotateY(0deg)]"
-                      )}
-                    >
-                      <div className="flex items-start justify-between">
-                        <p className="pr-2 font-mono text-[10px] font-bold uppercase leading-tight tracking-[0.19em] text-mad-aaa-gold">
-                          {`${String(index + 1).padStart(2, "0")} · ${pkg.tier}`}
-                        </p>
-                        <span className="rounded-full border border-mad-gold/30 bg-mad-gold/5 px-2 py-1 text-[10px] text-mad-gold">
-                          <Icon size={16} aria-hidden />
-                        </span>
-                      </div>
-                      <h4 className="mt-2 font-[family-name:var(--font-display)] text-[clamp(1.05rem,4.9vw,1.45rem)] font-bold uppercase leading-tight tracking-[0.08em] text-mad-highlight">
+                  <div className="flex items-start justify-between gap-3">
+                    <div>
+                      <p className="font-mono text-[10px] font-bold uppercase tracking-[0.19em] text-mad-aaa-gold">
+                        {`${String(index + 1).padStart(2, "0")} · ${pkg.tier}`}
+                      </p>
+                      <h4 className="mt-1.5 font-[family-name:var(--font-display)] text-[clamp(1.1rem,5vw,1.4rem)] font-bold uppercase leading-tight tracking-[-0.01em] text-mad-highlight">
                         {pkg.name}
                       </h4>
-                      <div className="mt-3 rounded-xl border border-mad-gold/20 bg-[#0f0a07]/65 p-3">
-                        <p className="font-mono text-[10px] uppercase tracking-[0.16em] text-mad-gold/70">
-                          Coverage Snapshot
-                        </p>
-                        <ul className="mt-2 max-h-[11.75rem] space-y-1.5 overflow-y-auto text-[11px] leading-relaxed text-mad-gold/70 sm:text-xs">
-                          {pkg.features.slice(0, 3).map((feature) => (
-                            <li key={feature} className="flex items-start gap-2">
-                              <span className="mt-[1px] text-mad-gold/70">+</span>
-                              <span>{feature}</span>
-                            </li>
-                          ))}
-                        </ul>
-                      </div>
-                      <p className="mt-auto pt-3 text-[9px] font-semibold uppercase tracking-[0.13em] text-mad-aaa-body/80">
-                        Tap to flip
-                      </p>
                     </div>
-
-                    <div
-                      className={cn(
-                        "absolute inset-0 flex h-full flex-col rounded-2xl border border-[color:var(--mad-border-gold-mid)] bg-[color:var(--mad-deep)] px-4 pb-4 pt-3.5 shadow-[var(--mad-shadow-elevated)]",
-                        "[backface-visibility:hidden] [transform:rotateY(180deg)]"
-                      )}
-                    >
-                      <p className="font-mono text-[10px] uppercase tracking-[0.16em] text-mad-gold/70">
-                        Delta Notes
-                      </p>
-                      <pre className="mt-3 max-h-[14.25rem] overflow-y-auto whitespace-pre-wrap rounded-xl border border-mad-gold/20 bg-[#0f0a07]/70 p-3 font-mono text-[11px] leading-relaxed text-cyan-500/60">
-                        {packageTerminals[index]}
-                      </pre>
-                      <p className="mt-auto pt-3 text-[9px] font-semibold uppercase tracking-[0.13em] text-mad-aaa-body/80">
-                        Tap to flip back
-                      </p>
-                    </div>
+                    <span className="shrink-0 rounded-full border border-mad-gold/30 bg-mad-gold/5 p-2 text-mad-gold">
+                      <Icon size={16} aria-hidden />
+                    </span>
                   </div>
-                </button>
+                  <ul className="mt-4 space-y-2.5">
+                    {pkg.features.map((feature) => (
+                      <li
+                        key={feature}
+                        className="flex items-start gap-2 text-[11px] font-medium leading-snug text-mad-aaa-primary sm:text-xs"
+                      >
+                        <span className="mt-[1px] shrink-0 text-mad-aaa-gold" aria-hidden>
+                          →
+                        </span>
+                        <span>{feature}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
               );
             })}
-          </div>
-          <div className="mt-2 flex items-center justify-end gap-2 px-1 sm:px-2">
-            <button
-              type="button"
-              onClick={() => scrollMobileRailBy("left")}
-              className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-mad-gold/30 bg-mad-gold/5 text-mad-gold"
-              aria-label="Scroll packages left"
-            >
-              ←
-            </button>
-            <button
-              type="button"
-              onClick={() => scrollMobileRailBy("right")}
-              className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-mad-gold/30 bg-mad-gold/5 text-mad-gold"
-              aria-label="Scroll packages right"
-            >
-              →
-            </button>
           </div>
         </div>
 

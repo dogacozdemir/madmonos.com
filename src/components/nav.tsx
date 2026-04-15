@@ -2,6 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
+import { Phone } from "lucide-react";
 import { type MouseEvent, useCallback, useEffect, useId, useRef, useState } from "react";
 import { cn } from "@/lib/utils";
 import { DiscoveryTrigger } from "@/components/discovery/discovery-trigger";
@@ -232,14 +233,15 @@ export function Nav() {
                 id="discovery-primary-trigger-mobile"
                 variant="ghost"
                 className={cn(
-                  "md:!hidden !inline-flex !size-10 !min-h-10 !items-center !justify-center !rounded-full !border !border-white/10 !bg-black/15 !p-0 !text-[8px] !font-bold !uppercase !leading-none !tracking-[0.08em] !text-mad-aaa-primary",
+                  "md:!hidden !inline-flex !size-10 !min-h-10 !items-center !justify-center !rounded-full !border !border-white/10 !bg-black/15 !p-0 !text-mad-aaa-primary",
                   "!backdrop-blur-xl !backdrop-saturate-[1.8]",
                   navChameleonGpu,
                   tapHaptic,
                   "[transform:translate3d(0,0,0)]"
                 )}
               >
-                Contact
+                <Phone size={14} aria-hidden />
+                <span className="sr-only">Contact</span>
               </DiscoveryTrigger>
 
               <button
