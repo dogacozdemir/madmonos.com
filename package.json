@@ -5,9 +5,8 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
-    "postbuild": "cp serve.json out/serve.json",
-    "start": "npx --yes serve@latest out -l 3000",
-    "preview": "npm run start",
+    "start": "next start",
+    "preview": "next start",
     "lint": "eslint"
   },
   "browserslist": [
@@ -20,6 +19,7 @@
     "clsx": "^2.1.1",
     "gsap": "^3.14.2",
     "lenis": "^1.3.21",
+    "lucide-react": "^1.8.0",
     "next": "16.2.1",
     "react": "19.2.4",
     "react-dom": "19.2.4",

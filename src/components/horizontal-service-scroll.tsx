@@ -1,17 +1,16 @@
 "use client";
 
 import { useEffect, useRef } from "react";
-import gsap from "gsap";
-import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { cn } from "@/lib/utils";
 import { MORPHING_SERVICES } from "@/data/mad-genius-copy";
 import { scheduleScrollTriggerRefresh } from "@/lib/schedule-st-refresh";
 import { HeroGradientCanvas } from "@/components/hero-gradient-canvas";
 import { ServicesCharacterStack } from "@/components/services-character-stack";
 
-gsap.registerPlugin(ScrollTrigger);
-
-const liquidEase = gsap.parseEase("power2.inOut");
+const liquidEase = (v: number) => {
+  const t = Math.max(0, Math.min(1, v));
+  return t < 0.5 ? 2 * t * t : 1 - ((-2 * t + 2) ** 2) / 2;
+};
 
 /** Hero `small-description` ile aynı hiyerarşi */
 const LABEL = "text-mad-aaa-body";
@@ -41,169 +40,134 @@ export function HorizontalServiceScroll() {
   const n = MORPHING_SERVICES.length;
 
   useEffect(() => {
-    let ctx: gsap.Context | undefined;
+    let cancelled = false;
+    let cleanup: (() => void) | undefined;
     const raf = requestAnimationFrame(() => {
-      const section = sectionRef.current;
-      const pin = pinRef.current;
-      const characterRoot = characterRef.current;
-      if (!section || !pin || !characterRoot) return;
+      void Promise.all([import("gsap"), import("gsap/ScrollTrigger")]).then(
+        ([{ default: gsap }, { ScrollTrigger }]) => {
+          if (cancelled) return;
+          gsap.registerPlugin(ScrollTrigger);
+          const section = sectionRef.current;
+          const pin = pinRef.current;
+          const characterRoot = characterRef.current;
+          if (!section || !pin || !characterRoot) return;
 
-      const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+          const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
-    const getArticles = () =>
-      Array.from(
-        (stageRef.current ?? pin).querySelectorAll<HTMLElement>(
-          "[data-service-slide]"
-        )
-      );
+          let articles = Array.from(
+            (stageRef.current ?? pin).querySelectorAll<HTMLElement>("[data-service-slide]")
+          );
+          let descEls = Array.from(pin.querySelectorAll<HTMLElement>("[data-service-desc]"));
+          let charEls = Array.from(pin.querySelectorAll<HTMLElement>("[data-service-character]"));
+          const debrisEls = Array.from(pin.querySelectorAll<HTMLElement>("[data-service-debris]"));
+          const flickerEl = pin.querySelector<HTMLElement>("[data-service-char-flicker]");
 
-    const getDescEls = () =>
-      Array.from(pin.querySelectorAll<HTMLElement>("[data-service-desc]"));
+          const recalcStageNodes = () => {
+            articles = Array.from(
+              (stageRef.current ?? pin).querySelectorAll<HTMLElement>("[data-service-slide]")
+            );
+            descEls = Array.from(pin.querySelectorAll<HTMLElement>("[data-service-desc]"));
+            charEls = Array.from(pin.querySelectorAll<HTMLElement>("[data-service-character]"));
+          };
 
-    const getCharEls = () =>
-      Array.from(pin.querySelectorAll<HTMLElement>("[data-service-character]"));
+          const applyFocus = (progress: number) => {
+            const floatIndex = progress * Math.max(1, n - 1);
+            const idx = Math.min(n - 1, Math.max(0, Math.round(floatIndex)));
+            const w = stageRef.current?.clientWidth ?? pin.clientWidth;
+            if (activeNoRef.current) activeNoRef.current.textContent = `NO.${String(idx + 1).padStart(2, "0")}`;
+            articles.forEach((article, i) => {
+              const offset = i - floatIndex;
+              gsap.set(article, { x: offset * w, force3D: true });
+              const wt = liquidEase(focusWeight(i, floatIndex));
+              const title = article.querySelector<HTMLElement>(".service-title");
+              if (title) gsap.set(title, { opacity: 0.3 + 0.7 * wt, scale: 1 + 0.04 * wt, transformOrigin: "50% 50%", force3D: true });
+            });
+            descEls.forEach((el, i) => {
+              const o = descFadeStrength(i, floatIndex);
+              gsap.set(el, { opacity: o, force3D: true });
+              el.setAttribute("aria-hidden", o < 0.08 ? "true" : "false");
+            });
+            charEls.forEach((el, i) =>
+              gsap.set(el, { opacity: descFadeStrength(i, floatIndex), force3D: true })
+            );
+            let crossMix = 0;
+            charEls.forEach((_, i) => {
+              const tw = liquidEase(focusWeight(i, floatIndex));
+              crossMix += tw * (1 - tw);
+            });
+            if (flickerEl) gsap.set(flickerEl, { opacity: Math.min(0.2, crossMix * 0.92), force3D: true });
+            gsap.set(characterRoot, {
+              rotation: 0,
+              scale: 1.02 + 0.05 * Math.sin(progress * Math.PI * Math.max(1, n - 1)),
+              transformOrigin: "50% 50%",
+              force3D: true,
+            });
+            debrisEls.forEach((el, i) => {
+              const k = (i + 1) * 0.37;
+              gsap.set(el, {
+                x: Math.sin(progress * Math.PI * 2.2 + k) * (32 + i * 12),
+                y: Math.cos(progress * Math.PI * 1.65 + k * 1.2) * (28 + i * 9),
+                rotation: progress * 48 * (i % 2 === 0 ? 1 : -1),
+                force3D: true,
+              });
+            });
+            const breathe = 52 + 8 * Math.sin(progress * Math.PI * 2 * Math.max(1, n - 1)) + 3 * Math.sin(progress * Math.PI * 4 * Math.max(1, n - 1) + 0.6);
+            const mask = `radial-gradient(ellipse 74% 72% at 50% 46%, var(--mad-mask-core) ${breathe}%, var(--mad-mask-mid) 76%, transparent 102%)`;
+            characterRoot.style.maskImage = mask;
+            characterRoot.style.webkitMaskImage = mask;
+          };
 
-    const applyFocus = (progress: number) => {
-      const floatIndex = progress * Math.max(1, n - 1);
-      const idx = Math.min(n - 1, Math.max(0, Math.round(floatIndex)));
-      const w = stageRef.current?.clientWidth ?? pin.clientWidth;
+          const ctx = gsap.context(() => {
+            if (reduced) {
+              gsap.set(characterRoot, { clearProps: "all" });
+              characterRoot.style.maskImage = "";
+              characterRoot.style.webkitMaskImage = "";
+              recalcStageNodes();
+              articles.forEach((article, i) => {
+                gsap.set(article, { x: 0 });
+                const title = article.querySelector<HTMLElement>(".service-title");
+                if (title) gsap.set(title, { opacity: i === 0 ? 1 : 0, scale: 1 });
+              });
+              descEls.forEach((el, i) => {
+                gsap.set(el, { opacity: i === 0 ? 1 : 0 });
+                el.setAttribute("aria-hidden", i === 0 ? "false" : "true");
+              });
+              charEls.forEach((el, i) => gsap.set(el, { opacity: i === 0 ? 1 : 0 }));
+              if (flickerEl) gsap.set(flickerEl, { opacity: 0 });
+              debrisEls.forEach((el) => gsap.set(el, { x: 0, y: 0, rotation: 0 }));
+              if (activeNoRef.current) activeNoRef.current.textContent = "NO.01";
+              return;
+            }
 
-      if (activeNoRef.current) {
-        activeNoRef.current.textContent = `NO.${String(idx + 1).padStart(2, "0")}`;
-      }
+            ScrollTrigger.create({
+              trigger: section,
+              start: "top top",
+              end: "bottom bottom",
+              pin,
+              pinSpacing: true,
+              scrub: 1.2,
+              invalidateOnRefresh: true,
+              refreshPriority: -1,
+              anticipatePin: 0,
+              onUpdate: (self) => applyFocus(self.progress),
+              onRefresh: (self) => {
+                recalcStageNodes();
+                applyFocus(self.progress);
+              },
+            });
+            requestAnimationFrame(() => applyFocus(0));
+          }, section);
 
-      getArticles().forEach((article, i) => {
-        const offset = i - floatIndex;
-        gsap.set(article, {
-          x: offset * w,
-          force3D: true,
-        });
-
-        const focus = focusWeight(i, floatIndex);
-        const wt = liquidEase(focus);
-        const title = article.querySelector<HTMLElement>(".service-title");
-        if (title) {
-          gsap.set(title, {
-            opacity: 0.3 + 0.7 * wt,
-            scale: 1 + 0.04 * wt,
-            transformOrigin: "50% 50%",
-            force3D: true,
-          });
+          cleanup = () => ctx.revert();
+          scheduleScrollTriggerRefresh();
         }
-      });
-
-      getDescEls().forEach((el, i) => {
-        const o = descFadeStrength(i, floatIndex);
-        gsap.set(el, {
-          opacity: o,
-          force3D: true,
-        });
-        el.setAttribute("aria-hidden", o < 0.08 ? "true" : "false");
-      });
-
-      getCharEls().forEach((el, i) => {
-        const o = descFadeStrength(i, floatIndex);
-        gsap.set(el, {
-          opacity: o,
-          force3D: true,
-        });
-      });
-
-      const flickerEl = pin.querySelector<HTMLElement>(
-        "[data-service-char-flicker]"
       );
-      let crossMix = 0;
-      getCharEls().forEach((_, i) => {
-        const w = liquidEase(focusWeight(i, floatIndex));
-        crossMix += w * (1 - w);
-      });
-      if (flickerEl) {
-        gsap.set(flickerEl, {
-          opacity: Math.min(0.2, crossMix * 0.92),
-          force3D: true,
-        });
-      }
-
-      gsap.set(characterRoot, {
-        rotation: 0,
-        scale:
-          1.02 +
-          0.05 * Math.sin(progress * Math.PI * Math.max(1, n - 1)),
-        transformOrigin: "50% 50%",
-        force3D: true,
-      });
-
-      pin.querySelectorAll<HTMLElement>("[data-service-debris]").forEach((el, i) => {
-        const k = (i + 1) * 0.37;
-        const x = Math.sin(progress * Math.PI * 2.2 + k) * (32 + i * 12);
-        const y = Math.cos(progress * Math.PI * 1.65 + k * 1.2) * (28 + i * 9);
-        const rot = progress * 48 * (i % 2 === 0 ? 1 : -1);
-        gsap.set(el, { x, y, rotation: rot, force3D: true });
-      });
-
-      const breathe =
-        52 +
-        8 * Math.sin(progress * Math.PI * 2 * Math.max(1, n - 1)) +
-        3 *
-          Math.sin(progress * Math.PI * 4 * Math.max(1, n - 1) + 0.6);
-      const mask = `radial-gradient(ellipse 74% 72% at 50% 46%, var(--mad-mask-core) ${breathe}%, var(--mad-mask-mid) 76%, transparent 102%)`;
-      characterRoot.style.maskImage = mask;
-      characterRoot.style.webkitMaskImage = mask;
-    };
-
-      ctx = gsap.context(() => {
-      if (reduced) {
-        gsap.set(characterRoot, { clearProps: "all" });
-        characterRoot.style.maskImage = "";
-        characterRoot.style.webkitMaskImage = "";
-        getArticles().forEach((article, i) => {
-          gsap.set(article, { x: 0 });
-          const title = article.querySelector<HTMLElement>(".service-title");
-          if (title) gsap.set(title, { opacity: i === 0 ? 1 : 0, scale: 1 });
-        });
-        getDescEls().forEach((el, i) => {
-          gsap.set(el, { opacity: i === 0 ? 1 : 0 });
-          el.setAttribute("aria-hidden", i === 0 ? "false" : "true");
-        });
-        getCharEls().forEach((el, i) => {
-          gsap.set(el, { opacity: i === 0 ? 1 : 0 });
-        });
-        const flickerEl = pin.querySelector<HTMLElement>(
-          "[data-service-char-flicker]"
-        );
-        if (flickerEl) gsap.set(flickerEl, { opacity: 0 });
-        pin.querySelectorAll<HTMLElement>("[data-service-debris]").forEach((el) => {
-          gsap.set(el, { x: 0, y: 0, rotation: 0 });
-        });
-        if (activeNoRef.current) {
-          activeNoRef.current.textContent = "NO.01";
-        }
-        return;
-      }
-
-      ScrollTrigger.create({
-        trigger: section,
-        start: "top top",
-        end: "bottom bottom",
-        pin,
-        pinSpacing: true,
-        scrub: 1.2,
-        invalidateOnRefresh: true,
-        refreshPriority: -1,
-        anticipatePin: 0,
-        onUpdate: (self) => applyFocus(self.progress),
-        onRefresh: (self) => applyFocus(self.progress),
-      });
-
-      requestAnimationFrame(() => applyFocus(0));
-      }, section);
-
-      scheduleScrollTriggerRefresh();
     });
 
     return () => {
+      cancelled = true;
       cancelAnimationFrame(raf);
-      ctx?.revert();
+      cleanup?.();
     };
   }, [n]);
 
@@ -313,8 +277,14 @@ export function HorizontalServiceScroll() {
                   <article
                     key={item.id}
                     data-service-slide
+                    data-service-id={item.id}
+                    itemScope
+                    itemType="https://schema.org/Service"
                     className="will-change-transform absolute inset-0 flex flex-col items-center justify-center px-5 text-center md:px-12"
                   >
+                    <meta itemProp="name" content={item.title} />
+                    <meta itemProp="description" content={item.description} />
+                    <meta itemProp="image" content={item.image} />
                     <h2
                       className={cn(
                         "service-title font-[family-name:var(--font-display)] font-extrabold capitalize leading-[1.02] tracking-[-0.035em]",
@@ -335,6 +305,8 @@ export function HorizontalServiceScroll() {
                     <p
                       key={item.id}
                       data-service-desc
+                      data-service-id={item.id}
+                      itemProp="description"
                       className={cn(
                         "service-desc pointer-events-none absolute inset-0 flex items-center justify-center text-center font-sans text-[clamp(1.05rem,2.35vw,1.75rem)] font-normal leading-snug text-mad-aaa-body",
                         i === 0 ? "opacity-100" : "opacity-0"

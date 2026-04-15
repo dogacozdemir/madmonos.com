@@ -236,10 +236,12 @@ export function StructuredData() {
       caption: "Madmonos low-poly gorilla mark and wordmark",
     },
     description: SITE_DESCRIPTION,
-    slogan: "End-to-end marketing, accelerated by AI.",
+    slogan: "AI-first, end-to-end marketing accelerated by elite engineering capacity.",
     areaServed: "Worldwide",
     knowsAbout: [
       "Generative Engine Optimization",
+      "AI-first growth engineering",
+      "High-capacity frontend engineering",
       "Technical SEO and GEO",
       "Meta Ads and Google Ads",
       "TikTok Ads and retargeting",

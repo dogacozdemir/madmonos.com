@@ -75,35 +75,64 @@ export const MAD_STICKY_SLIDES: readonly MadStickySlide[] = [
 
 /** Horizontal “morphing services” rail — titles + editorial one-liners. */
 export type MorphingServiceItem = {
-  id: string;
+  id: MorphingServiceId;
   title: string;
   description: string;
+  image: string;
+  imageAlt: string;
+  technicalBadge?: string;
 };
+
+export type MorphingServiceId =
+  | "ai-creative"
+  | "tech-stack"
+  | "automation"
+  | "performance"
+  | "growth-architecture";
 
 export const MORPHING_SERVICES: readonly MorphingServiceItem[] = [
   {
     id: "ai-creative",
     title: "AI creative",
-    description: "Building fast — cinematic spots, stills, and variants without the production queue.",
+    description: "Building fast — cinematic spots, stills, and variants that fits your branding",
+    image: "/creative.webp",
+    imageAlt:
+      "AI creative service visual for cinematic brand assets, ad variants, and social content generation",
   },
   {
-    id: "web-dev",
-    title: "Web dev",
-    description: "Scaling smarter — performant surfaces, contracts, and deploys you can trust.",
+    id: "tech-stack",
+    title: "Tech stack",
+    description: "From web development to technical SEO/GEO, we handle all your technical burden.",
+    image: "/developer.webp",
+    imageAlt:
+      "Technical stack service visual covering web development, technical SEO, and GEO implementation",
   },
   {
     id: "automation",
-    title: "Automation",
-    description: "Pipelines that run while your team decides — not while they copy-paste.",
+    title: "Brand Mono",
+    description:
+      "The face of your business. A dedicated AI persona ensuring your brand stays active when your team doesn't want to be on camera.",
+    image: "/agent.webp",
+    imageAlt:
+      "Madmonos Brand Mono — A high-fidelity AI brand ambassador engineered for continuous cinematic content production",
+    technicalBadge: "AI Avatar · Content",
   },
   {
-    id: "seo-geo",
-    title: "SEO / GEO",
-    description: "Discovery that compounds — classic search plus AI-native surfaces.",
+    id: "performance",
+    title: "Performance",
+    description: "We manage the most consistent and suitable campaigns for you across all social media and advertising platforms.",
+    image: "/performance.webp",
+    imageAlt:
+      "Performance marketing service visual for multi-channel campaign execution and optimization",
   },
   {
-    id: "strategy",
-    title: "Strategy",
-    description: "One spine across GTM — measurable, owned, ready to ship.",
+    id: "growth-architecture",
+    title: "Growth Architecture",
+    description:
+      "Growth isn't a plan; it's a blueprint. We engineer the the possible best practices for your business.",
+    image: "/strategy.webp",
+    imageAlt:
+      "Madmonos Growth Architecture — High-velocity GTM blueprints and neural strategy nodes engineered for scalable market entry",
+    technicalBadge: "Logic · GTM",
   },
 ] as const;

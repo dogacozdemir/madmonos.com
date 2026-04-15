@@ -34,6 +34,14 @@ export function MagneticCtaButton({
   useEffect(() => {
     const btn = btnRef.current;
     if (!btn) return;
+    const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    if (reduced) {
+      void import("gsap").then(({ default: gsap }) => {
+        gsapRef.current = gsap;
+        gsap.set(btn, { x: 0, y: 0, force3D: true });
+      });
+      return;
+    }
     const lerp = variant === "circle" ? 0.22 : 0.18;
 
     let cancelled = false;
@@ -101,12 +109,14 @@ export function MagneticCtaButton({
       type="button"
       onClick={onClick}
       onMouseEnter={() => {
+        if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
         hovering.current = true;
         const g = gsapRef.current;
         const b = btnRef.current;
         if (g && b) g.killTweensOf(b);
       }}
       onMouseLeave={() => {
+        if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
         hovering.current = false;
         if (rafRef.current !== 0) {
           cancelAnimationFrame(rafRef.current);

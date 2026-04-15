@@ -2,13 +2,15 @@
 
 import { useEffect, useRef } from "react";
 import Image from "next/image";
-import { MAD_INSIGHTS } from "@/data/mad-insights";
+import Link from "next/link";
+import type { BlogPost } from "@/lib/blog-posts";
 import { cn } from "@/lib/utils";
 
 /** Mad Insights — `#services` bitişiyle scrub’da el ele (peek + reveal). */
-export function LatestNews() {
+export function LatestNews({ posts }: { posts: BlogPost[] }) {
   const sectionRef = useRef<HTMLElement>(null);
   const cardsRef = useRef<HTMLDivElement>(null);
+  const visiblePosts = posts.slice(0, 3);
 
   useEffect(() => {
     let cancelled = false;
@@ -19,7 +21,7 @@ export function LatestNews() {
         const section = sectionRef.current;
         const cards = cardsRef.current;
         const services = document.getElementById("services");
-        if (!section || !cards || !services || cancelled) return;
+        if (!section || !cards || !services || cancelled || visiblePosts.length === 0) return;
 
         const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
         const items = cards.querySelectorAll(".insight-card");
@@ -83,7 +85,9 @@ export function LatestNews() {
       cancelAnimationFrame(raf);
       ctx?.revert();
     };
-  }, []);
+  }, [visiblePosts.length]);
+
+  if (visiblePosts.length === 0) return null;
 
   return (
     <section
@@ -110,36 +114,48 @@ export function LatestNews() {
           ref={cardsRef}
           className="relative z-[1] mt-10 grid auto-rows-fr grid-cols-1 gap-8 md:mt-14 md:grid-cols-3 md:gap-x-6 md:gap-y-0 lg:gap-x-8"
         >
-          {MAD_INSIGHTS.map((item) => (
+          {visiblePosts.map((post) => (
             <article
-              key={item.id}
+              key={post.slug}
               className={cn(
                 "insight-card group relative flex min-h-0 flex-col overflow-hidden rounded-2xl border border-[color:var(--mad-border-accent-soft)] bg-[color:var(--mad-surface-mist-card)] shadow-[var(--mad-shadow-insight-card)] [transform:translate3d(0,0,0)]"
               )}
             >
-              <div className="relative aspect-[16/10] w-full overflow-hidden bg-mad-deep">
-                <Image
-                  src={item.image}
-                  alt={item.title}
-                  fill
-                  quality={70}
-                  className="object-cover transition-transform duration-700 ease-out group-hover:scale-[1.04]"
-                  sizes="(max-width: 768px) min(40vw, 360px), (max-width: 1280px) calc((100vw - 4rem) / 3), min(480px, 33vw)"
-                />
-              </div>
-              <div className="p-5 md:p-6">
-                <p className="font-mono text-[10px] font-bold uppercase tracking-[0.22em] text-[color:var(--mad-text-insight-meta)] md:text-[11px]">
-                  <span>{item.date}</span>
-                  <span aria-hidden className="text-mad-base">
-                    {" "}
-                    ·{" "}
-                  </span>
-                  <span>{item.category}</span>
-                </p>
-                <h3 className="mt-3 font-[family-name:var(--font-display)] text-xl font-bold uppercase leading-[1.15] tracking-[-0.02em] text-mad-base md:text-2xl">
-                  {item.title}
-                </h3>
-              </div>
+              <Link
+                href={`/blog/${post.slug}`}
+                className="block focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--mad-border-gold-focus)] focus-visible:ring-offset-2 focus-visible:ring-offset-[color:var(--mad-surface-mist-card)]"
+                aria-label={`Read insight: ${post.title}`}
+              >
+                <div className="relative aspect-[16/10] w-full overflow-hidden bg-mad-deep">
+                {post.coverImage ? (
+                  <Image
+                    src={post.coverImage}
+                    alt={post.coverAlt}
+                    width={1200}
+                    height={750}
+                    quality={75}
+                    className="h-full w-full object-cover transition-transform duration-700 ease-out group-hover:scale-[1.04]"
+                    sizes="(max-width: 768px) min(40vw, 360px), (max-width: 1280px) calc((100vw - 4rem) / 3), min(480px, 33vw)"
+                  />
+                ) : (
+                  <div
+                    className="absolute inset-0 bg-gradient-to-br from-mad-deep via-mad-base to-mad-accent"
+                    aria-hidden
+                  />
+                )}
+                </div>
+                <div className="p-5 md:p-6">
+                  <p className="font-mono text-[10px] font-bold uppercase tracking-[0.22em] text-[color:var(--mad-text-insight-meta)] md:text-[11px]">
+                    <span>{post.category}</span>
+                  </p>
+                  <h3 className="mt-3 font-[family-name:var(--font-display)] text-xl font-bold uppercase leading-[1.15] tracking-[-0.02em] text-mad-base md:text-2xl">
+                    {post.title}
+                  </h3>
+                  <p className="mt-3 text-sm leading-relaxed text-[color:var(--mad-text-on-light-body)]">
+                    {post.excerpt}
+                  </p>
+                </div>
+              </Link>
             </article>
           ))}
         </div>

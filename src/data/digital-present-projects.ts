@@ -7,6 +7,8 @@ export type ProjectSlide = {
   id: string;
   clientCode: string;
   title: string;
+  /** List / year rail (HUD) */
+  year: string;
   description: string;
   image: string;
   /** Kaynak görselin piksel genişliği */
@@ -21,72 +23,47 @@ export type ProjectSlide = {
 export const DIGITAL_PRESENT_PROJECTS: readonly ProjectSlide[] = [
   {
     id: "01",
-    clientCode: "CREATIVE ENGINE",
-    title: "High-Volume Gen-AI Assets",
+    clientCode: "ELITE VIDEO",
+    title: "AI Creative",
+    year: "2026",
     description:
-      "4K-grade AI social and ad creatives with custom HTML5 templates and automated brand identity systems.",
+      "Cinema-grade AI video synthesis. High-emotion, brand-perfect engineered content.",
     image: "/assets/creative-gen.webp",
     width: 520,
     height: 290,
     imageAlt:
-      "Madmonos AI creative hub — dynamic 4K product visuals and HTML5 assets emerging from a golden neural grid",
+      "Madmonos Elite Video — Cinema-grade AI production and liquid-gold visual synthesis for high-end brand storytelling",
     tone: "from-mad-gold/30 via-mad-deep to-mad-base",
-    technicalBadge: "AI · Creative",
+    technicalBadge: "Cinema-AI · Production",
   },
   {
     id: "02",
-    clientCode: "SEARCH DOMINATION",
-    title: "Technical SEO & GEO",
+    clientCode: "MARFOR HOUSE",
+    title: "Marfor Strategy",
+    year: "2025",
     description:
-      "Rebuilding digital architectures for the LLM era — dominating Perplexity, SearchGPT, and classic search through technical authority.",
+      "Enter Marfor: our marketing force with elite digital architecture. ",
     image: "/assets/geo-search.webp",
     width: 520,
     height: 290,
     imageAlt:
-      "Madmonos GEO architecture — LLM-optimized data streams and technical SEO nodes in a cinematic obsidian interface",
+      "Madmonos Marfor House — Enterprise-level marketing architecture and high-authority strategy nodes in a cinematic interface",
     tone: "from-mad-accent/35 via-mad-deep to-mad-base",
-    technicalBadge: "GEO · LLM",
+    technicalBadge: "Marfor · Enterprise",
   },
   {
     id: "03",
-    clientCode: "GROWTH ARCHITECT",
-    title: "Performance & Media Buying",
+    clientCode: "UNIFIED FLOW",
+    title: "Growth Engine",
+    year: "2024",
     description:
-      "Aggressive media buying across Meta, Google, and TikTok with real-time spend optimization and retargeting ecosystems.",
+      "Creative, performance, and ops - a unified growth engine.",
     image: "/assets/performance-ads.webp",
     width: 520,
     height: 290,
     imageAlt:
-      "Madmonos performance dashboard — cross-platform ad metrics and liquid gold data flows for Meta and Google Ads",
+      "Madmonos Unified Flow — Integration of creative, performance, and operations into a single frictionless neural growth engine",
     tone: "from-mad-highlight/25 via-mad-deep to-mad-base",
-    technicalBadge: "Ads · Growth",
-  },
-  {
-    id: "04",
-    clientCode: "LOGIC STACK",
-    title: "Ecosystem Automation",
-    description:
-      "Full-spectrum automation and integration of CRM, CDP, and ERP systems into unified, frictionless marketing workflows.",
-    image: "/assets/tech-automation.webp",
-    width: 520,
-    height: 290,
-    imageAlt:
-      "Madmonos technical integration — mechanical gold circuit traces connecting complex CRM and ERP software nodes",
-    tone: "from-mad-gold-dark/25 via-mad-deep to-mad-base",
-    technicalBadge: "Stack · Automation",
-  },
-  {
-    id: "05",
-    clientCode: "OPS COMMAND",
-    title: "Real-Time Operational Hub",
-    description:
-      "Frictionless campaign and social management delivered through custom web and mobile dashboards for 24/7 transparency.",
-    image: "/assets/ops-dashboard.webp",
-    width: 520,
-    height: 292,
-    imageAlt:
-      "Madmonos operational control — real-time reporting dashboard with transparent data flows and account metrics",
-    tone: "from-mad-accent/20 via-mad-deep to-mad-base",
-    technicalBadge: "Ops · Data",
+    technicalBadge: "Full-Stack · Growth",
   },
 ] as const;

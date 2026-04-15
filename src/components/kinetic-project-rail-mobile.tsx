@@ -9,10 +9,10 @@ import { cn } from "@/lib/utils";
 const SLIDES = [...DIGITAL_PRESENT_PROJECTS];
 /** `slide.width` ile uyumlu — küçük ekranda ~520px kaynak. */
 const MOBILE_IMG_SIZES =
-  "(max-width: 768px) min(40vw, 320px), (max-width: 1024px) min(88vw, 520px), 90vw";
+  "(max-width: 768px) 92vw, (max-width: 1024px) min(92vw, 720px), 92vw";
 
 const CARD_SHELL_H =
-  "h-[min(52dvh,26rem)] min-h-[22rem] max-h-[26rem] w-[min(88vw,22rem)]";
+  "h-[min(60dvh,30rem)] min-h-[24rem] max-h-[30rem] w-[min(92vw,24rem)]";
 
 function KineticFlipCard({
   slide,
@@ -23,11 +23,28 @@ function KineticFlipCard({
   flipped: boolean;
   onToggle: () => void;
 }) {
+  const gestureRef = useRef({ startX: 0, startY: 0, moved: false });
+
   return (
     <div className="snap-center shrink-0 pl-1 first:pl-0" style={{ perspective: "1000px" }}>
       <button
         type="button"
-        onClick={onToggle}
+        onPointerDown={(e) => {
+          gestureRef.current.startX = e.clientX;
+          gestureRef.current.startY = e.clientY;
+          gestureRef.current.moved = false;
+        }}
+        onPointerMove={(e) => {
+          const dx = Math.abs(e.clientX - gestureRef.current.startX);
+          const dy = Math.abs(e.clientY - gestureRef.current.startY);
+          if (dx > 8 || dy > 8) gestureRef.current.moved = true;
+        }}
+        onPointerUp={() => {
+          if (!gestureRef.current.moved) onToggle();
+        }}
+        onClick={(e) => {
+          e.preventDefault();
+        }}
         aria-expanded={flipped}
         aria-label={
           flipped
@@ -40,7 +57,7 @@ function KineticFlipCard({
           "rounded-2xl",
           "focus-visible:ring-2 focus-visible:ring-[color:var(--mad-border-gold-ring)]",
           "active:scale-[0.988] motion-reduce:active:scale-100",
-          "transition-transform duration-150 ease-out"
+          "touch-pan-y transition-transform duration-150 ease-out"
         )}
       >
         <div
@@ -58,7 +75,7 @@ function KineticFlipCard({
               "[backface-visibility:hidden] [transform:rotateY(0deg)]"
             )}
           >
-            <div className="relative h-[68%] w-full overflow-hidden">
+            <div className="relative h-[72%] w-full overflow-hidden">
               <Image
                 src={slide.image}
                 alt={slide.imageAlt}
@@ -71,7 +88,7 @@ function KineticFlipCard({
               />
               <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-[color:var(--mad-surface-panel-plum)]/90 via-transparent to-transparent" />
             </div>
-            <div className="flex h-[32%] flex-col justify-end gap-1 px-4 pb-3 pt-1">
+            <div className="flex h-[28%] flex-col justify-end gap-1 px-4 pb-3 pt-1">
               <p className="font-mono text-[10px] font-bold uppercase tracking-[0.2em] text-mad-aaa-gold">
                 <span>{slide.id}</span>
                 <span className="text-mad-aaa-body"> · </span>
@@ -120,6 +137,13 @@ export function KineticProjectRailMobile({ className }: { className?: string }) 
 
   const toggle = useCallback((id: string) => {
     setFlipped((s) => ({ ...s, [id]: !s[id] }));
+  }, []);
+
+  const scrollRailBy = useCallback((dir: "left" | "right") => {
+    const rail = railRef.current;
+    if (!rail) return;
+    const delta = Math.round(rail.clientWidth * 0.84) * (dir === "left" ? -1 : 1);
+    rail.scrollBy({ left: delta, behavior: "smooth" });
   }, []);
 
   useEffect(() => {
@@ -189,7 +213,7 @@ export function KineticProjectRailMobile({ className }: { className?: string }) 
           Project rail
         </p>
         <h2 className="mt-2 font-[family-name:var(--font-display)] text-[clamp(1.5rem,8vw,2.25rem)] font-bold uppercase leading-[1.08] tracking-[-0.03em] text-mad-highlight">
-          Selected client work
+          What we do
         </h2>
         <p className="mt-2 max-w-prose text-xs font-medium leading-relaxed text-mad-aaa-body">
           Swipe horizontally. Tap a card to flip — front shows the line of business; back reveals the
@@ -203,7 +227,7 @@ export function KineticProjectRailMobile({ className }: { className?: string }) 
           "flex min-h-[min(58dvh,30rem)] gap-3 overflow-x-auto overflow-y-hidden overscroll-x-contain pb-6 pl-4 pr-6 pt-1",
           "snap-x snap-mandatory [-webkit-overflow-scrolling:touch]",
           "[scrollbar-width:none] [&::-webkit-scrollbar]:h-0 [&::-webkit-scrollbar]:w-0",
-          "[touch-action:pan-x]"
+          "[touch-action:pan-x_pan-y]"
         )}
       >
         {SLIDES.map((slide) => (
@@ -214,6 +238,24 @@ export function KineticProjectRailMobile({ className }: { className?: string }) 
             onToggle={() => toggle(slide.id)}
           />
         ))}
+      </div>
+      <div className="mt-2 flex items-center justify-end gap-2 px-4">
+        <button
+          type="button"
+          onClick={() => scrollRailBy("left")}
+          className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-mad-gold/30 bg-mad-gold/5 text-mad-gold"
+          aria-label="Scroll projects left"
+        >
+          ←
+        </button>
+        <button
+          type="button"
+          onClick={() => scrollRailBy("right")}
+          className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-mad-gold/30 bg-mad-gold/5 text-mad-gold"
+          aria-label="Scroll projects right"
+        >
+          →
+        </button>
       </div>
     </div>
   );

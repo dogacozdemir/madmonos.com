@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Image from "next/image";
 import { cn } from "@/lib/utils";
 
 type Props = {
@@ -37,11 +38,13 @@ export function CinematicPlaceholderBg({
     >
       <div className="absolute inset-0 mad-cinematic-mesh [transform:translate3d(0,0,0)]" />
       {showBrand && brandImageSrc ? (
-        <img
+        <Image
           src={brandImageSrc}
           alt=""
-          decoding="async"
-          fetchPriority={isHero ? "high" : "low"}
+          fill
+          sizes="100vw"
+          priority={isHero}
+          loading={isHero ? "eager" : "lazy"}
           className="mad-cinematic-photo absolute inset-0 h-full w-full object-cover opacity-[0.34] [transform:translate3d(0,0,0)]"
           onError={() => setShowBrand(false)}
         />

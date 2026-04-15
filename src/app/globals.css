@@ -326,6 +326,16 @@ body.site-plane-light #main-scroll-surface {
   body.mad-cursor-ring [role="button"] {
     cursor: none !important;
   }
+
+  body.mad-cursor-ring.mad-modal-open,
+  body.mad-cursor-ring.mad-modal-open button,
+  body.mad-cursor-ring.mad-modal-open a[href],
+  body.mad-cursor-ring.mad-modal-open input,
+  body.mad-cursor-ring.mad-modal-open textarea,
+  body.mad-cursor-ring.mad-modal-open select,
+  body.mad-cursor-ring.mad-modal-open [role="button"] {
+    cursor: auto !important;
+  }
 }
 
 /* Opacity + scaleY only (composited); avoids animating box-shadow. */
@@ -591,8 +601,10 @@ section.horizontal-scroll-section#services {
   }
 }
 
-/* ─── Projects (StickySolutions) — media rail: static mesh (no bg-position anim = cheaper paints) ─── */
+/* ─── Projects (StickySolutions) — media rail with subtle animated depth ─── */
 .sticky-sol-media-mesh {
+  position: relative;
+  overflow: hidden;
   background: linear-gradient(
     122deg,
     var(--mad-deep) 0%,
@@ -604,6 +616,59 @@ section.horizontal-scroll-section#services {
     var(--mad-deep) 100%
   );
   transform: translateZ(0);
+}
+
+.sticky-sol-media-mesh::before,
+.sticky-sol-media-mesh::after {
+  content: "";
+  position: absolute;
+  inset: -14%;
+  pointer-events: none;
+  will-change: transform, opacity;
+}
+
+.sticky-sol-media-mesh::before {
+  background: radial-gradient(
+    ellipse 52% 44% at 28% 34%,
+    rgba(201, 174, 85, 0.2) 0%,
+    rgba(201, 174, 85, 0.06) 36%,
+    transparent 72%
+  );
+  animation: sticky-sol-mesh-drift-a 16s ease-in-out infinite;
+}
+
+.sticky-sol-media-mesh::after {
+  background: radial-gradient(
+    ellipse 58% 48% at 72% 66%,
+    rgba(227, 208, 234, 0.16) 0%,
+    rgba(227, 208, 234, 0.05) 34%,
+    transparent 70%
+  );
+  animation: sticky-sol-mesh-drift-b 22s ease-in-out infinite;
+}
+
+@keyframes sticky-sol-mesh-drift-a {
+  0%,
+  100% {
+    transform: translate3d(-1.5%, -1%, 0) scale(1);
+    opacity: 0.5;
+  }
+  50% {
+    transform: translate3d(1.8%, 1.2%, 0) scale(1.05);
+    opacity: 0.72;
+  }
+}
+
+@keyframes sticky-sol-mesh-drift-b {
+  0%,
+  100% {
+    transform: translate3d(1.2%, 1.5%, 0) scale(1);
+    opacity: 0.4;
+  }
+  50% {
+    transform: translate3d(-1.6%, -1.4%, 0) scale(1.06);
+    opacity: 0.64;
+  }
 }
 
 .sticky-sol-media-rail-bridge {
@@ -641,6 +706,10 @@ section.horizontal-scroll-section#services {
   transform: translate3d(0, 0, 0) scale(calc(1.008 - 0.008 * var(--dual-reveal, 0)));
 }
 
+.sticky-sol-visual-stage {
+  filter: drop-shadow(0 18px 42px rgba(10, 6, 12, 0.42));
+}
+
 /* İki sütun seam — altın okuma çizgisi (desktop grid) */
 @media (min-width: 1024px) {
   .sticky-sol-column-seam {
@@ -655,6 +724,10 @@ section.horizontal-scroll-section#services {
   }
   .mad-cinematic-mesh,
   .mad-cinematic-photo {
+    animation: none;
+  }
+  .sticky-sol-media-mesh::before,
+  .sticky-sol-media-mesh::after {
     animation: none;
   }
 }
@@ -856,3 +929,4 @@ section.horizontal-scroll-section#services {
     will-change: auto;
   }
 }
+

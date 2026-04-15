@@ -2,14 +2,12 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useEffect, useId, useState } from "react";
+import { type MouseEvent, useCallback, useEffect, useId, useRef, useState } from "react";
 import { cn } from "@/lib/utils";
 import { DiscoveryTrigger } from "@/components/discovery/discovery-trigger";
 import { useDiscovery } from "@/components/discovery/discovery-context";
 import { MagneticProximity } from "@/components/magnetic-proximity";
 import { useTeamSpotlightNavOptional } from "@/components/providers/team-spotlight-nav-context";
-
-const CONTACT_MAIL = "mailto:hello@madmonos.com";
 
 /** GPU-friendly shell: blur samples page behind; translateZ promotes layer. */
 const navChameleonGpu =
@@ -17,23 +15,22 @@ const navChameleonGpu =
 
 const navChameleonTint = "bg-mad-deep/30";
 
-const links: {
-  href: string;
-  label: string;
-  subLabel: string;
-  ariaLabel?: string;
-}[] = [
-  { href: "#hero", label: "Hero", subLabel: "START YOUR JOURNEY" },
-  { href: "#projects", label: "Projects", subLabel: "CASE STUDIES" },
-  { href: "#impact", label: "Impact", subLabel: "SIGNAL & SCALE" },
-  { href: "#services", label: "Services", subLabel: "WHAT WE DO" },
-  { href: "#insights", label: "Insights", subLabel: "LATEST NEWS" },
-  {
-    href: "#marquee",
-    label: "Runtime",
-    subLabel: "PRODUCTION TOOLING",
-    ariaLabel: "Production tooling and stack",
-  },
+type NavMenuItem =
+  | {
+      kind: "link";
+      href: string;
+      label: string;
+      subLabel: string;
+      ariaLabel?: string;
+    }
+  | { kind: "discovery"; label: string; subLabel: string };
+
+const navMenuItems: NavMenuItem[] = [
+  { kind: "link", href: "/portfolio", label: "Portfolio", subLabel: "FILMSTRIP & CASES" },
+  { kind: "link", href: "/marfor", label: "MarFor", subLabel: "MARKETING FORCES" },
+  { kind: "link", href: "/blog", label: "Blog", subLabel: "ARTICLES & UPDATES" },
+  { kind: "link", href: "/#insights", label: "Insights", subLabel: "LATEST NEWS" },
+  { kind: "discovery", label: "Contact", subLabel: "OPEN DISCOVERY" },
 ];
 
 const tapHaptic =
@@ -74,20 +71,78 @@ export function Nav() {
   const { open: openDiscovery } = useDiscovery();
   const [menuOpen, setMenuOpen] = useState(false);
   const menuId = useId();
+  const menuDialogRef = useRef<HTMLDivElement>(null);
+  const menuToggleRef = useRef<HTMLButtonElement>(null);
+
+  const closeMenu = useCallback(() => {
+    const activeEl = document.activeElement as HTMLElement | null;
+    if (activeEl && menuDialogRef.current?.contains(activeEl)) {
+      activeEl.blur();
+      menuToggleRef.current?.focus();
+    }
+    setMenuOpen(false);
+  }, []);
+
+  const handleHomeClick = useCallback((e: MouseEvent<HTMLAnchorElement>) => {
+    e.preventDefault();
+    if (typeof window === "undefined") return;
+
+    const isHome = window.location.pathname === "/";
+    if (!isHome) {
+      window.location.assign("/");
+      return;
+    }
+
+    const hero = document.getElementById("hero");
+    if (hero) hero.scrollIntoView({ behavior: "smooth", block: "start" });
+    window.history.replaceState(null, "", "/");
+  }, []);
 
   useEffect(() => {
     if (!menuOpen) return;
     const prevOverflow = document.body.style.overflow;
     document.body.style.overflow = "hidden";
+    const dialog = menuDialogRef.current;
+    const selector =
+      'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
+    const getFocusable = () =>
+      dialog
+        ? Array.from(dialog.querySelectorAll<HTMLElement>(selector)).filter((el) => {
+            if (el.tabIndex < 0) return false;
+            return el.getClientRects().length > 0;
+          })
+        : [];
+
+    const first = getFocusable()[0];
+    requestAnimationFrame(() => first?.focus());
+
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") setMenuOpen(false);
+      if (e.key === "Escape") {
+        closeMenu();
+        return;
+      }
+      if (e.key !== "Tab") return;
+      const list = getFocusable();
+      if (list.length === 0) return;
+      const firstEl = list[0];
+      const lastEl = list[list.length - 1];
+      const active = document.activeElement as HTMLElement | null;
+      if (e.shiftKey) {
+        if (active === firstEl || (active && dialog && !dialog.contains(active))) {
+          e.preventDefault();
+          lastEl.focus();
+        }
+      } else if (active === lastEl || (active && dialog && !dialog.contains(active))) {
+        e.preventDefault();
+        firstEl.focus();
+      }
     };
     window.addEventListener("keydown", onKey);
     return () => {
       document.body.style.overflow = prevOverflow;
       window.removeEventListener("keydown", onKey);
     };
-  }, [menuOpen]);
+  }, [closeMenu, menuOpen]);
 
   return (
     <>
@@ -114,6 +169,7 @@ export function Nav() {
             <div className="flex min-h-0 min-w-0 items-center justify-start">
               <Link
                 href="/"
+                onClick={handleHomeClick}
                 className={cn(
                   "inline-flex size-11 shrink-0 items-center justify-center text-mad-highlight sm:size-12",
                   tapHaptic
@@ -137,6 +193,7 @@ export function Nav() {
             <div className="flex min-h-0 min-w-0 items-center justify-center px-0.5 sm:px-1">
               <Link
                 href="/"
+                onClick={handleHomeClick}
                 className={cn(
                   "mad-wordmark max-w-full text-center whitespace-nowrap",
                   /* Mobilde kısaltma yok: vw ile küçülür; md+ sabit 25px */
@@ -167,7 +224,7 @@ export function Nav() {
                     "[transform:translate3d(0,0,0)]"
                   )}
                 >
-                  Discovery
+                  Contact
                 </DiscoveryTrigger>
               </MagneticProximity>
 
@@ -175,18 +232,19 @@ export function Nav() {
                 id="discovery-primary-trigger-mobile"
                 variant="ghost"
                 className={cn(
-                  "md:!hidden !inline-flex !size-10 !min-h-10 !items-center !justify-center !rounded-full !border !border-white/10 !bg-black/15 !p-0 !text-[9px] !font-bold !uppercase !leading-none !tracking-[0.1em] !text-mad-aaa-primary",
+                  "md:!hidden !inline-flex !size-10 !min-h-10 !items-center !justify-center !rounded-full !border !border-white/10 !bg-black/15 !p-0 !text-[8px] !font-bold !uppercase !leading-none !tracking-[0.08em] !text-mad-aaa-primary",
                   "!backdrop-blur-xl !backdrop-saturate-[1.8]",
                   navChameleonGpu,
                   tapHaptic,
                   "[transform:translate3d(0,0,0)]"
                 )}
               >
-                Start
+                Contact
               </DiscoveryTrigger>
 
               <button
                 type="button"
+                ref={menuToggleRef}
                 className={cn(
                   "inline-flex size-10 shrink-0 items-center justify-center rounded-full sm:size-11",
                   "border border-white/10 bg-black/15 text-mad-aaa-primary shadow-[inset_0_1px_0_rgba(255,255,255,0.06)]",
@@ -198,7 +256,7 @@ export function Nav() {
                 aria-expanded={menuOpen}
                 aria-controls={menuId}
                 aria-label={menuOpen ? "Close menu" : "Open menu"}
-                onClick={() => setMenuOpen((o) => !o)}
+                onClick={() => (menuOpen ? closeMenu() : setMenuOpen(true))}
               >
                 <span className="relative block h-3 w-[1.125rem]" aria-hidden>
                   <span
@@ -228,10 +286,12 @@ export function Nav() {
 
       <div
         id={menuId}
+        ref={menuDialogRef}
         role="dialog"
         aria-modal="true"
         aria-label="Site navigation"
         aria-hidden={!menuOpen}
+        inert={!menuOpen}
         className={cn(
           "fixed inset-0 z-[45] flex flex-col transition-[visibility,opacity] duration-300 ease-out motion-reduce:transition-none",
           navChameleonGpu,
@@ -250,7 +310,7 @@ export function Nav() {
             !menuOpen && "pointer-events-none"
           )}
           aria-label="Dismiss navigation"
-          onClick={() => setMenuOpen(false)}
+          onClick={closeMenu}
         />
 
         <div
@@ -281,103 +341,77 @@ export function Nav() {
               />
               <nav className="flex min-h-0 flex-1 flex-col overflow-y-auto overscroll-contain" aria-label="Primary">
                 <ul className="flex flex-col gap-0">
-                  {links.map((item) => (
-                    <li key={item.href} className="border-b border-white/10">
-                      <Link
-                        href={item.href}
-                        aria-label={item.ariaLabel ?? `${item.label}: ${item.subLabel}`}
-                        data-mad-cursor="view"
-                        onClick={() => setMenuOpen(false)}
-                        className={cn(
-                          "nav-link-reveal nav-overlay-link group flex min-h-[4.25rem] items-center justify-between gap-4 py-4 pr-1 sm:min-h-[4.5rem]",
-                          tapHaptic
-                        )}
-                      >
-                        <span className="min-w-0 flex-1 text-left">
-                          <span
-                            className={cn(
-                              "nav-overlay-anim-main block font-[family-name:var(--font-display)] text-2xl font-semibold uppercase leading-[1.05] tracking-[-0.02em] text-mad-aaa-primary sm:text-3xl"
-                            )}
-                          >
-                            {item.label}
+                  {navMenuItems.map((item) => (
+                    <li
+                      key={item.kind === "link" ? item.href : "discovery-contact"}
+                      className="border-b border-white/10"
+                    >
+                      {item.kind === "link" ? (
+                        <Link
+                          href={item.href}
+                          aria-label={item.ariaLabel ?? `${item.label}: ${item.subLabel}`}
+                          data-mad-cursor="view"
+                          onClick={closeMenu}
+                          className={cn(
+                            "nav-link-reveal nav-overlay-link group flex min-h-[4.25rem] w-full items-center justify-between gap-4 py-4 pr-1 sm:min-h-[4.5rem]",
+                            tapHaptic
+                          )}
+                        >
+                          <span className="min-w-0 flex-1 text-left">
+                            <span
+                              className={cn(
+                                "nav-overlay-anim-main block font-[family-name:var(--font-display)] text-2xl font-semibold uppercase leading-[1.05] tracking-[-0.02em] text-mad-aaa-primary sm:text-3xl"
+                              )}
+                            >
+                              {item.label}
+                            </span>
+                            <span
+                              className={cn(
+                                "nav-overlay-anim-sub mt-1 block font-mono text-[10px] font-medium uppercase tracking-[0.2em] text-mad-aaa-body sm:text-[11px] sm:tracking-[0.22em]"
+                              )}
+                            >
+                              {item.subLabel}
+                            </span>
                           </span>
-                          <span
-                            className={cn(
-                              "nav-overlay-anim-sub mt-1 block font-mono text-[10px] font-medium uppercase tracking-[0.2em] text-mad-aaa-body sm:text-[11px] sm:tracking-[0.22em]"
-                            )}
-                          >
-                            {item.subLabel}
+                          <MenuArrowIcon className="opacity-70 transition-opacity duration-300 group-hover:opacity-100" />
+                        </Link>
+                      ) : (
+                        <button
+                          type="button"
+                          aria-label={`${item.label}: ${item.subLabel}`}
+                          data-mad-cursor="view"
+                          onClick={() => {
+                            closeMenu();
+                            openDiscovery();
+                          }}
+                          className={cn(
+                            "nav-link-reveal nav-overlay-link group flex min-h-[4.25rem] w-full items-center justify-between gap-4 py-4 pr-1 text-left sm:min-h-[4.5rem]",
+                            tapHaptic
+                          )}
+                        >
+                          <span className="min-w-0 flex-1 text-left">
+                            <span
+                              className={cn(
+                                "nav-overlay-anim-main block font-[family-name:var(--font-display)] text-2xl font-semibold uppercase leading-[1.05] tracking-[-0.02em] text-mad-aaa-primary sm:text-3xl"
+                              )}
+                            >
+                              {item.label}
+                            </span>
+                            <span
+                              className={cn(
+                                "nav-overlay-anim-sub mt-1 block font-mono text-[10px] font-medium uppercase tracking-[0.2em] text-mad-aaa-body sm:text-[11px] sm:tracking-[0.22em]"
+                              )}
+                            >
+                              {item.subLabel}
+                            </span>
                           </span>
-                        </span>
-                        <MenuArrowIcon className="opacity-70 transition-opacity duration-300 group-hover:opacity-100" />
-                      </Link>
+                          <MenuArrowIcon className="opacity-70 transition-opacity duration-300 group-hover:opacity-100" />
+                        </button>
+                      )}
                     </li>
                   ))}
                 </ul>
               </nav>
-
-              <div className="mt-6 grid gap-3 sm:mt-8 sm:grid-cols-2 sm:gap-4">
-                <a
-                  href={CONTACT_MAIL}
-                  className={cn(
-                    "group flex items-center justify-between gap-3 rounded-2xl border border-white/10 bg-black/15 px-4 py-4 backdrop-blur-2xl backdrop-saturate-[1.8]",
-                    navChameleonGpu,
-                    "transition-[border-color,background-color] duration-300 hover:border-white/20",
-                    tapHaptic
-                  )}
-                >
-                  <div className="min-w-0 text-left">
-                    <p className="font-mono text-[10px] font-medium uppercase tracking-[0.18em] text-mad-aaa-body">
-                      Contact us
-                    </p>
-                    <p className="mt-0.5 font-[family-name:var(--font-display)] text-sm font-semibold uppercase tracking-wide text-mad-aaa-primary group-hover:text-mad-gold sm:text-base">
-                      Get in touch
-                    </p>
-                  </div>
-                  <span
-                    className="inline-flex size-10 shrink-0 items-center justify-center rounded-full border border-white/15 bg-black/25 text-mad-gold backdrop-blur-md"
-                    aria-hidden
-                  >
-                    <svg className="size-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                      <path d="M4 4h16c1 1 0 1 0 2v12a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6c0-1 1-1 0-2z" />
-                      <path d="m22 6-10 7L2 6" />
-                    </svg>
-                  </span>
-                </a>
-
-                <button
-                  type="button"
-                  onClick={() => {
-                    setMenuOpen(false);
-                    openDiscovery();
-                  }}
-                  className={cn(
-                    "group flex items-center justify-between gap-3 rounded-2xl border border-[color:var(--mad-border-gold-soft)] bg-black/15 px-4 py-4 text-left backdrop-blur-2xl backdrop-saturate-[1.8]",
-                    navChameleonGpu,
-                    "transition-[border-color,background-color,box-shadow] duration-300 hover:border-[color:var(--mad-border-gold-mid)] hover:shadow-[var(--mad-shadow-cta-gold-pill)]",
-                    tapHaptic
-                  )}
-                >
-                  <div className="min-w-0">
-                    <p className="font-mono text-[10px] font-medium uppercase tracking-[0.18em] text-mad-aaa-body">
-                      Discovery
-                    </p>
-                    <p className="mt-0.5 font-[family-name:var(--font-display)] text-sm font-semibold uppercase tracking-wide text-mad-gold sm:text-base">
-                      Start a project brief
-                    </p>
-                  </div>
-                  <span
-                    className="inline-flex size-10 shrink-0 items-center justify-center rounded-full bg-mad-gold/15 text-mad-gold ring-1 ring-[color:var(--mad-border-gold-soft)] backdrop-blur-md"
-                    aria-hidden
-                  >
-                    <svg className="size-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                      <path d="M4.5 16.5c0-1.5 1-2 2-2.5s3.5-1 4.5-3 1-4 1-4" />
-                      <path d="M9 15V9h6" />
-                      <path d="m15 9 4 4-4 4" />
-                    </svg>
-                  </span>
-                </button>
-              </div>
             </div>
           </div>
         </div>

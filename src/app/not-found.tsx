@@ -18,7 +18,7 @@ export default function NotFound() {
         This page drifted off the GTM map. Head back to known territory.
       </p>
       <Link
-        href="/"
+        href="/#hero"
         className="cta-digital-present rounded-xl bg-mad-gold px-8 py-3 text-sm font-bold uppercase tracking-wider text-mad-base"
       >
         Back to Sanity

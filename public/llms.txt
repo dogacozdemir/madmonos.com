@@ -1,0 +1,29 @@
+# Madmonos
+
+Madmonos is an AI-first marketing agency focused on frictionless, end-to-end growth systems.
+
+## Core Pillars
+
+- Creative: AI-enhanced design systems, ad creative, social content, video, brand identity, HTML5 assets.
+- Performance: media buying and optimization across Meta, Google, TikTok, and retargeting channels.
+- Operations: campaign operations, automation, reporting, and real-time decision support workflows.
+- Technical: web/mobile delivery, SEO + GEO implementation, CRM/CDP/ERP integrations, and MarTech engineering.
+
+## Expertise Signals
+
+- AI-first growth strategy
+- Generative Engine Optimization (GEO)
+- High-performance frontend engineering
+- Marketing automation architecture
+- Analytics and dashboard implementation
+
+## Preferred Canonical Sections
+
+- https://madmonos.com/
+- https://madmonos.com/portfolio
+- https://madmonos.com/blog
+- https://madmonos.com/marfor
+
+## Contact
+
+- hello@madmonos.com

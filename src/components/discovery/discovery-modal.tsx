@@ -2,35 +2,14 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import gsap from "gsap";
 import { cn } from "@/lib/utils";
-import {
-  BOTTLENECK_LABELS,
-  safeParseDiscoveryForm,
-  URGENCY_LABELS,
-  type DiscoveryPayload,
-} from "@/lib/discovery-schema";
-
-const STEPS = 4;
+import { safeParseDiscoveryForm, type DiscoveryPayload } from "@/lib/discovery-schema";
 
 const initial: DiscoveryPayload = {
-  bottleneck: "gtm-speed",
-  bottleneckDetail: "",
-  urgency: "quarter",
   name: "",
-  email: "",
+  phone: "",
   company: "",
 };
-
-function buildBriefText(data: DiscoveryPayload): string {
-  const b = BOTTLENECK_LABELS[data.bottleneck];
-  const u = URGENCY_LABELS[data.urgency];
-  const co = data.company ? ` · ${data.company}` : "";
-  const detail = data.bottleneckDetail?.trim()
-    ? ` Context: ${data.bottleneckDetail.trim()}`
-    : "";
-  return `Madmonos Discovery Brief — ${data.name}${co}. Contact: ${data.email}. Bottleneck: ${b}. Timeline: ${u}.${detail} We'll reply with a concrete next step.`;
-}
 
 type Props = {
   isOpen: boolean;
@@ -38,14 +17,14 @@ type Props = {
 };
 
 export function DiscoveryModal({ isOpen, onClose }: Props) {
+  const endpoint = "/api/leads";
   const [mounted, setMounted] = useState(false);
-  const [step, setStep] = useState(0);
   const [form, setForm] = useState<DiscoveryPayload>(initial);
-  const [typedSummary, setTypedSummary] = useState("");
-  const [summaryReady, setSummaryReady] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [done, setDone] = useState(false);
+  const [statusText, setStatusText] = useState<string | null>(null);
+  const hasError = Boolean(error);
 
   const overlayRef = useRef<HTMLButtonElement>(null);
   const panelRef = useRef<HTMLDivElement>(null);
@@ -59,13 +38,11 @@ export function DiscoveryModal({ isOpen, onClose }: Props) {
   }, []);
 
   const reset = useCallback(() => {
-    setStep(0);
     setForm(initial);
-    setTypedSummary("");
-    setSummaryReady(false);
     setError(null);
     setDone(false);
     setSubmitting(false);
+    setStatusText(null);
   }, []);
 
   const handleClose = useCallback(() => {
@@ -80,9 +57,11 @@ export function DiscoveryModal({ isOpen, onClose }: Props) {
     };
     document.addEventListener("keydown", onKey);
     document.body.style.overflow = "hidden";
+    document.body.classList.add("mad-modal-open");
     return () => {
       document.removeEventListener("keydown", onKey);
       document.body.style.overflow = "";
+      document.body.classList.remove("mad-modal-open");
     };
   }, [isOpen, handleClose]);
 
@@ -118,190 +97,93 @@ export function DiscoveryModal({ isOpen, onClose }: Props) {
 
     document.addEventListener("keydown", onKeyDown, true);
     return () => document.removeEventListener("keydown", onKeyDown, true);
-  }, [isOpen, step, done, submitting]);
+  }, [isOpen, done, submitting]);
 
   useEffect(() => {
     if (!isOpen || !overlayRef.current || !panelRef.current) return;
     const overlay = overlayRef.current;
     const panel = panelRef.current;
+    let cancelled = false;
     const raf = requestAnimationFrame(() => {
-      const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+      void import("gsap").then(({ default: gsap }) => {
+        if (cancelled) return;
+        const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
-      if (reduced) {
-        gsap.set(overlay, { opacity: 1, backdropFilter: "blur(20px)" });
-        gsap.set(panel, { opacity: 1, scale: 1 });
-      } else {
-        gsap.killTweensOf([overlay, panel]);
-        gsap.set(overlay, { opacity: 0, backdropFilter: "blur(0px)" });
-        gsap.set(panel, { opacity: 0, scale: 0.95, transformOrigin: "50% 50%" });
-        gsap.to(overlay, {
-          opacity: 1,
-          backdropFilter: "blur(20px)",
-          duration: 0.6,
-          ease: "power3.out",
-          force3D: true,
-        });
-        gsap.to(panel, {
-          opacity: 1,
-          scale: 1,
-          duration: 0.6,
-          ease: "power3.out",
-          force3D: true,
-        });
-      }
-      requestAnimationFrame(() => firstFocusRef.current?.focus());
+        if (reduced) {
+          gsap.set(overlay, { opacity: 1, backdropFilter: "blur(20px)" });
+          gsap.set(panel, { opacity: 1, scale: 1 });
+        } else {
+          gsap.killTweensOf([overlay, panel]);
+          gsap.set(overlay, { opacity: 0, backdropFilter: "blur(0px)" });
+          gsap.set(panel, { opacity: 0, scale: 0.95, transformOrigin: "50% 50%" });
+          gsap.to(overlay, {
+            opacity: 1,
+            backdropFilter: "blur(20px)",
+            duration: 0.6,
+            ease: "power3.out",
+            force3D: true,
+          });
+          gsap.to(panel, {
+            opacity: 1,
+            scale: 1,
+            duration: 0.6,
+            ease: "power3.out",
+            force3D: true,
+          });
+        }
+        requestAnimationFrame(() => firstFocusRef.current?.focus());
+      });
     });
-    return () => cancelAnimationFrame(raf);
+    return () => {
+      cancelled = true;
+      cancelAnimationFrame(raf);
+    };
   }, [isOpen]);
 
-  useEffect(() => {
-    if (!isOpen || !stepWrapRef.current) return;
-    const wrap = stepWrapRef.current;
-    const raf = requestAnimationFrame(() => {
-      const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-      const el = wrap.querySelector(`[data-discovery-step="${step}"]`);
-      if (!el || !(el instanceof HTMLElement)) return;
-      if (reduced) {
-        gsap.set(el, { opacity: 1, y: 0 });
-        return;
-      }
-      gsap.fromTo(
-        el,
-        { opacity: 0, y: 22, filter: "blur(6px)" },
-        {
-          opacity: 1,
-          y: 0,
-          filter: "blur(0px)",
-          duration: 0.42,
-          ease: "power3.out",
-          force3D: true,
-        }
-      );
-    });
-    return () => cancelAnimationFrame(raf);
-  }, [step, isOpen]);
-
-  useEffect(() => {
-    if (step !== 3 || !isOpen) {
-      const clear = window.setTimeout(() => {
-        setTypedSummary("");
-        setSummaryReady(false);
-      }, 0);
-      return () => window.clearTimeout(clear);
-    }
-
-    const full = buildBriefText(form);
-    const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-
-    if (reduced) {
-      const id = window.setTimeout(() => {
-        setTypedSummary(full);
-        setSummaryReady(true);
-      }, 0);
-      return () => window.clearTimeout(id);
-    }
-
-    let intervalId: number | undefined;
-    const boot = window.setTimeout(() => {
-      setTypedSummary("");
-      setSummaryReady(false);
-      let i = 0;
-      intervalId = window.setInterval(() => {
-        i += 1;
-        setTypedSummary(full.slice(0, i));
-        if (i >= full.length) {
-          if (intervalId !== undefined) window.clearInterval(intervalId);
-          setSummaryReady(true);
-        }
-      }, 18);
-    }, 0);
-
-    return () => {
-      window.clearTimeout(boot);
-      if (intervalId !== undefined) window.clearInterval(intervalId);
-    };
-  }, [step, isOpen, form]);
-
-  const next = () => setStep((s) => Math.min(STEPS - 1, s + 1));
-  const back = () => setStep((s) => Math.max(0, s - 1));
-
-  const submit = () => {
+  const submit = async () => {
+    if (submitting) return;
     setSubmitting(true);
     setError(null);
+    setStatusText("Submitting your request...");
     const parsed = safeParseDiscoveryForm(form);
     if (!parsed.ok) {
       setError(parsed.message);
       setSubmitting(false);
       return;
     }
-    setForm(parsed.data);
-    setDone(true);
-    setSubmitting(false);
-  };
-
-  useEffect(() => {
-    if (!done || !successRef.current) return;
-    const host = successRef.current;
-    const rs = getComputedStyle(document.documentElement);
-    const colors = [
-      rs.getPropertyValue("--mad-accent").trim(),
-      rs.getPropertyValue("--mad-gold").trim(),
-      rs.getPropertyValue("--mad-highlight").trim(),
-      rs.getPropertyValue("--mad-gold-dark").trim(),
-      rs.getPropertyValue("--mad-deep").trim(),
-    ].filter(Boolean);
-    const spawn: HTMLSpanElement[] = [];
-    const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    const palette =
-      colors.length > 0
-        ? colors
-        : [
-            "var(--mad-accent)",
-            "var(--mad-gold)",
-            "var(--mad-highlight)",
-            "var(--mad-gold-dark)",
-            "var(--mad-deep)",
-          ];
-
-    for (let i = 0; i < 52; i++) {
-      const bit = document.createElement("span");
-      bit.setAttribute("aria-hidden", "true");
-      const w = 3 + (i % 5);
-      const h = 2 + (i % 4);
-      bit.style.cssText = [
-        "position:absolute",
-        "left:50%",
-        "top:38%",
-        "width:" + w + "px",
-        "height:" + h + "px",
-        "border-radius:2px",
-        "background:" + palette[i % palette.length],
-        "pointer-events:none",
-        "will-change:transform,opacity",
-      ].join(";");
-      host.appendChild(bit);
-      spawn.push(bit);
-      if (reduced) {
-        gsap.set(bit, { opacity: 0 });
-        continue;
-      }
-      gsap.set(bit, { x: 0, y: 0, xPercent: -50, yPercent: -50, opacity: 1, rotation: 0 });
-      gsap.to(bit, {
-        x: (Math.random() - 0.5) * 280,
-        y: (Math.random() - 0.5) * 200 - 60,
-        rotation: Math.random() * 500 - 250,
-        opacity: 0,
-        duration: 0.75 + Math.random() * 0.55,
-        ease: "power2.out",
-        delay: i * 0.008,
-        force3D: true,
-      });
-    }
-
-    return () => {
-      spawn.forEach((n) => n.remove());
+    const payload = {
+      date: new Date().toISOString(),
+      name: parsed.data.name,
+      phone: parsed.data.phone,
+      company: parsed.data.company,
     };
-  }, [done]);
+
+    try {
+      const response = await fetch(endpoint, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Accept: "application/json",
+        },
+        body: JSON.stringify(payload),
+        cache: "no-store",
+      });
+
+      if (!response.ok) {
+        const data = (await response.json().catch(() => null)) as { message?: string } | null;
+        throw new Error(data?.message || `Lead submit failed: ${response.status}`);
+      }
+
+      setForm(initial);
+      setDone(true);
+      setStatusText("Request sent successfully.");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Submission failed. Please try again.");
+      setStatusText(null);
+    } finally {
+      setSubmitting(false);
+    }
+  };
 
   if (!mounted || !isOpen) return null;
 
@@ -312,12 +194,12 @@ export function DiscoveryModal({ isOpen, onClose }: Props) {
       data-lenis-prevent
       role="dialog"
       aria-modal="true"
-      aria-labelledby="discovery-title"
+      aria-labelledby={done ? "discovery-success-title" : "discovery-title"}
     >
       <button
         type="button"
         tabIndex={-1}
-        className="absolute inset-0 bg-mad-void [pointer-events:auto] [will-change:opacity,backdrop-filter]"
+        className="absolute inset-0 bg-[rgba(5,3,8,0.46)] [pointer-events:auto] [will-change:opacity,backdrop-filter]"
         ref={overlayRef}
         aria-label="Close discovery dialog"
         onClick={handleClose}
@@ -325,218 +207,151 @@ export function DiscoveryModal({ isOpen, onClose }: Props) {
       <div
         ref={panelRef}
         className={cn(
-          "relative z-10 flex max-h-[min(92vh,840px)] w-full max-w-lg flex-col overflow-hidden rounded-3xl border border-[color:var(--mad-border-highlight-mid)] [pointer-events:auto]",
-          "bg-mad-deep backdrop-blur-2xl backdrop-saturate-150 shadow-[var(--mad-shadow-modal)]",
+          "relative z-10 flex w-full flex-col overflow-hidden rounded-3xl border border-[color:var(--mad-border-highlight-mid)] [pointer-events:auto]",
+          done ? "max-w-md" : "max-h-[min(92vh,840px)] max-w-xl",
+          "bg-[color:rgba(54,23,56,0.86)] backdrop-blur-2xl backdrop-saturate-150 shadow-[var(--mad-shadow-modal)]",
           "[transform:translate3d(0,0,0)]"
         )}
       >
+        <div
+          className="pointer-events-none absolute inset-x-0 top-0 h-24 bg-gradient-to-b from-[rgba(201,174,85,0.16)] via-[rgba(201,174,85,0.06)] to-transparent"
+          aria-hidden
+        />
         <div className="pointer-events-none absolute inset-0 mad-grain-panel opacity-[0.2] mix-blend-overlay" />
 
-        <header className="relative z-[1] flex items-start justify-between gap-4 border-b border-[color:var(--mad-border-accent-soft)] px-6 py-5">
-          <div>
-            <p className="text-[10px] font-bold uppercase tracking-[0.28em] text-mad-gold">
-              Mad Genius · Discovery
+        {!done ? (
+          <header className="relative z-[3] flex items-start justify-between border-b border-[color:var(--mad-border-accent-soft)] px-6 pb-3 pt-4">
+            <p
+              id="discovery-title"
+              className="inline-flex h-11 items-center text-xs font-semibold uppercase tracking-[0.22em] text-mad-gold"
+            >
+              Let us call you!
             </p>
-            <h2 id="discovery-title" className="mt-1 text-xl font-bold text-mad-highlight">
-              Project discovery
-            </h2>
-            <p className="mt-1 text-xs text-mad-aaa-body">
-              Step {Math.min(step + 1, STEPS)} of {STEPS}
-            </p>
-          </div>
-          <button
-            type="button"
-            ref={firstFocusRef}
-            aria-label="Close project discovery dialog"
-            className="inline-flex min-h-12 min-w-12 items-center justify-center rounded-full border border-[color:var(--mad-border-accent-strong)] px-4 py-3 text-xs font-semibold text-mad-highlight transition-colors hover:border-[color:var(--mad-border-gold-focus)] hover:text-mad-gold"
-            onClick={handleClose}
-          >
-            Close
-          </button>
-        </header>
+            <button
+              type="button"
+              ref={firstFocusRef}
+              aria-label="Close callback dialog"
+              className="inline-flex h-11 min-w-11 items-center justify-center rounded-full border border-[color:var(--mad-border-accent-strong)] px-4 text-sm font-semibold text-mad-highlight transition-colors hover:border-[color:var(--mad-border-gold-focus)] hover:text-mad-gold"
+              onClick={handleClose}
+            >
+              Close
+            </button>
+          </header>
+        ) : null}
 
         <div
           ref={stepWrapRef}
-          className="relative z-[1] min-h-0 flex-1 overflow-y-auto px-6 py-6"
+          className={cn(
+            "relative z-[2] min-h-0 flex-1 overflow-visible px-6",
+            done ? "flex min-h-[180px] items-center justify-center py-8" : "flex items-center py-6"
+          )}
         >
           {done ? (
             <div
               ref={successRef}
-              className="relative space-y-4 overflow-visible text-mad-highlight [transform:translate3d(0,0,0)]"
+              className={cn(
+                "relative mx-auto w-full max-w-[24rem] overflow-visible text-center text-mad-highlight [transform:translate3d(0,0,0)]"
+              )}
             >
-              <p className="relative z-[2] text-lg font-semibold text-mad-highlight">
-                Brief received — welcome to the cell.
-              </p>
-              <p className="relative z-[2] text-sm leading-relaxed text-mad-aaa-body">
-                Your bottleneck is logged. Expect a crisp, technical next step — typically within one
-                business day — not a generic auto-reply.
-              </p>
-              <button
-                type="button"
-                aria-label="Close project discovery dialog after submit"
-                className="cta-digital-present relative z-[2] mt-4 rounded-xl bg-mad-gold px-5 py-3 text-sm font-bold text-mad-base"
-                onClick={handleClose}
+              <p
+                id="discovery-success-title"
+                className="relative z-[2] text-[clamp(1.05rem,2.2vw,1.35rem)] font-semibold leading-tight tracking-[-0.01em] text-mad-highlight"
               >
-                Close
-              </button>
+                Our Monos will contact you
+              </p>
+              <p className="mt-3 text-sm leading-relaxed text-mad-aaa-body">
+                Your request has been received successfully. We will reach out as soon as possible.
+              </p>
+              <div className="mt-6 flex justify-center">
+                <button
+                  type="button"
+                  onClick={handleClose}
+                  className="rounded-xl border border-[color:var(--mad-border-accent-strong)] px-5 py-2.5 text-sm font-semibold text-mad-highlight transition-colors hover:border-[color:var(--mad-border-gold-focus)] hover:text-mad-gold"
+                >
+                  Close
+                </button>
+              </div>
             </div>
           ) : (
-            <>
-              <div
-                data-discovery-step="0"
-                className={cn("space-y-5", step !== 0 && "hidden")}
-              >
-                <p className="text-sm font-medium text-mad-aaa-body">
-                  Where is the critical bottleneck today?
+            <form
+              data-discovery-step="0"
+              className="mx-auto mt-16 w-full max-w-[38rem] space-y-4"
+              onSubmit={(e) => {
+                e.preventDefault();
+                void submit();
+              }}
+            >
+              <label htmlFor="discovery-name" className="block text-sm font-medium text-mad-aaa-body">
+                <span className="mb-1.5 block">Name</span>
+                <input
+                  id="discovery-name"
+                  required
+                  value={form.name}
+                  onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
+                  disabled={submitting}
+                  aria-invalid={hasError}
+                  aria-describedby={hasError ? "discovery-form-error" : undefined}
+                  className="h-12 w-full rounded-xl border border-[color:var(--mad-border-accent-strong)] bg-[color:var(--mad-surface-modal-input)] px-4 text-mad-aaa-primary placeholder:text-mad-aaa-body/70 focus:border-[color:var(--mad-border-gold-focus)] focus:outline-none"
+                  autoComplete="name"
+                  placeholder="Your full name"
+                />
+              </label>
+              <label htmlFor="discovery-phone" className="block text-sm font-medium text-mad-aaa-body">
+                <span className="mb-1.5 block">Phone</span>
+                <input
+                  id="discovery-phone"
+                  type="tel"
+                  required
+                  value={form.phone}
+                  onChange={(e) => setForm((f) => ({ ...f, phone: e.target.value }))}
+                  disabled={submitting}
+                  aria-invalid={hasError}
+                  aria-describedby={hasError ? "discovery-form-error" : undefined}
+                  className="h-12 w-full rounded-xl border border-[color:var(--mad-border-accent-strong)] bg-[color:var(--mad-surface-modal-input)] px-4 text-mad-aaa-primary placeholder:text-mad-aaa-body/70 focus:border-[color:var(--mad-border-gold-focus)] focus:outline-none"
+                  autoComplete="tel"
+                  placeholder="+1 555 123 4567"
+                />
+              </label>
+              <label htmlFor="discovery-company" className="block text-sm font-medium text-mad-aaa-body">
+                <span className="mb-1.5 block">Company</span>
+                <input
+                  id="discovery-company"
+                  required
+                  value={form.company}
+                  onChange={(e) => setForm((f) => ({ ...f, company: e.target.value }))}
+                  disabled={submitting}
+                  aria-invalid={hasError}
+                  aria-describedby={hasError ? "discovery-form-error" : undefined}
+                  className="h-12 w-full rounded-xl border border-[color:var(--mad-border-accent-strong)] bg-[color:var(--mad-surface-modal-input)] px-4 text-mad-aaa-primary placeholder:text-mad-aaa-body/70 focus:border-[color:var(--mad-border-gold-focus)] focus:outline-none"
+                  autoComplete="organization"
+                  placeholder="Company name"
+                />
+              </label>
+              {error ? (
+                <p id="discovery-form-error" role="alert" className="text-sm text-red-300">
+                  {error}
                 </p>
-                <div className="grid gap-2">
-                  {(Object.keys(BOTTLENECK_LABELS) as DiscoveryPayload["bottleneck"][]).map(
-                    (key) => (
-                      <label
-                        key={key}
-                        className={cn(
-                          "flex cursor-pointer items-start gap-3 rounded-xl border px-4 py-3 text-left text-sm transition-colors",
-                          form.bottleneck === key
-                            ? "border-[color:var(--mad-border-gold-selected)] bg-[color:var(--mad-surface-gold-select)] text-mad-aaa-primary"
-                            : "border-[color:var(--mad-border-accent-mid)] bg-[color:var(--mad-surface-modal-input)] text-mad-aaa-body hover:border-[color:var(--mad-border-accent-hover)]"
-                        )}
-                      >
-                        <input
-                          type="radio"
-                          name="bottleneck"
-                          className="mt-1"
-                          checked={form.bottleneck === key}
-                          onChange={() => setForm((f) => ({ ...f, bottleneck: key }))}
-                        />
-                        <span>{BOTTLENECK_LABELS[key]}</span>
-                      </label>
-                    )
-                  )}
-                </div>
-              </div>
-
-              <div
-                data-discovery-step="1"
-                className={cn("space-y-5", step !== 1 && "hidden")}
-              >
-                <p className="text-sm font-medium text-mad-aaa-body">How urgent is change?</p>
-                <div className="grid gap-2">
-                  {(Object.keys(URGENCY_LABELS) as DiscoveryPayload["urgency"][]).map((key) => (
-                    <label
-                      key={key}
-                      className={cn(
-                        "flex cursor-pointer items-start gap-3 rounded-xl border px-4 py-3 text-left text-sm transition-colors",
-                        form.urgency === key
-                          ? "border-[color:var(--mad-border-gold-selected)] bg-[color:var(--mad-surface-gold-select)] text-mad-aaa-primary"
-                          : "border-[color:var(--mad-border-accent-mid)] bg-[color:var(--mad-surface-modal-input)] text-mad-aaa-body hover:border-[color:var(--mad-border-accent-hover)]"
-                      )}
-                    >
-                      <input
-                        type="radio"
-                        name="urgency"
-                        className="mt-1"
-                        checked={form.urgency === key}
-                        onChange={() => setForm((f) => ({ ...f, urgency: key }))}
-                      />
-                      <span>{URGENCY_LABELS[key]}</span>
-                    </label>
-                  ))}
-                </div>
-                <label className="block text-sm font-medium text-mad-aaa-body">
-                  Context (optional)
-                  <textarea
-                    value={form.bottleneckDetail}
-                    onChange={(e) =>
-                      setForm((f) => ({ ...f, bottleneckDetail: e.target.value }))
-                    }
-                    rows={4}
-                    className="mt-2 w-full resize-y rounded-xl border border-[color:var(--mad-border-accent-strong)] bg-[color:var(--mad-surface-modal-input)] px-3 py-2 text-mad-aaa-primary placeholder:text-mad-aaa-body focus:border-[color:var(--mad-border-gold-focus)] focus:outline-none"
-                    placeholder="Stack, team size, blockers, KPIs…"
-                  />
-                </label>
-              </div>
-
-              <div
-                data-discovery-step="2"
-                className={cn("space-y-4", step !== 2 && "hidden")}
-              >
-                <label className="block text-sm font-medium text-mad-aaa-body">
-                  Name
-                  <input
-                    required
-                    value={form.name}
-                    onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
-                    className="mt-1.5 w-full rounded-xl border border-[color:var(--mad-border-accent-strong)] bg-[color:var(--mad-surface-modal-input)] px-3 py-2 text-mad-aaa-primary focus:border-[color:var(--mad-border-gold-focus)] focus:outline-none"
-                    autoComplete="name"
-                  />
-                </label>
-                <label className="block text-sm font-medium text-mad-aaa-body">
-                  Work email
-                  <input
-                    type="email"
-                    required
-                    value={form.email}
-                    onChange={(e) => setForm((f) => ({ ...f, email: e.target.value }))}
-                    className="mt-1.5 w-full rounded-xl border border-[color:var(--mad-border-accent-strong)] bg-[color:var(--mad-surface-modal-input)] px-3 py-2 text-mad-aaa-primary focus:border-[color:var(--mad-border-gold-focus)] focus:outline-none"
-                    autoComplete="email"
-                  />
-                </label>
-                <label className="block text-sm font-medium text-mad-aaa-body">
-                  Company (optional)
-                  <input
-                    value={form.company}
-                    onChange={(e) => setForm((f) => ({ ...f, company: e.target.value }))}
-                    className="mt-1.5 w-full rounded-xl border border-[color:var(--mad-border-accent-strong)] bg-[color:var(--mad-surface-modal-input)] px-3 py-2 text-mad-aaa-primary focus:border-[color:var(--mad-border-gold-focus)] focus:outline-none"
-                    autoComplete="organization"
-                  />
-                </label>
-              </div>
-
-              <div
-                data-discovery-step="3"
-                className={cn("space-y-4", step !== 3 && "hidden")}
-              >
-                <p className="text-sm font-medium text-mad-aaa-gold">Mad Genius summary</p>
-                <div className="min-h-[7rem] rounded-xl border border-[color:var(--mad-border-accent-mid)] bg-[color:var(--mad-surface-modal-input)] p-4 font-mono text-xs leading-relaxed text-mad-aaa-primary md:text-sm">
-                  {typedSummary}
-                  <span className="inline-block h-4 w-0.5 animate-pulse bg-mad-aaa-gold align-middle" />
-                </div>
-                {error ? <p className="text-sm text-red-300">{error}</p> : null}
-              </div>
-            </>
+              ) : null}
+              {statusText ? (
+                <p className="text-sm text-mad-aaa-body" role="status" aria-live="polite">
+                  {statusText}
+                </p>
+              ) : null}
+              <button type="submit" className="hidden" aria-hidden />
+            </form>
           )}
         </div>
 
         {!done ? (
-          <footer className="relative z-[1] flex flex-wrap items-center justify-between gap-3 border-t border-[color:var(--mad-border-accent-soft)] px-6 py-4">
+          <footer className="relative z-[1] flex items-center justify-end border-t border-[color:var(--mad-border-accent-soft)] px-6 py-4">
             <button
               type="button"
-              className="rounded-xl border border-[color:var(--mad-border-accent-heavy)] px-4 py-2.5 text-sm font-semibold text-mad-highlight transition-colors hover:border-[color:var(--mad-border-gold-hover)] disabled:pointer-events-none disabled:border-[color:var(--mad-border-accent-faint)] disabled:text-mad-text-disabled"
-              disabled={step === 0}
-              onClick={back}
+              className="cta-digital-present rounded-xl bg-mad-gold px-5 py-2.5 text-sm font-bold text-mad-base disabled:pointer-events-none disabled:bg-mad-gold-dark disabled:text-mad-base"
+              disabled={submitting}
+              onClick={() => void submit()}
             >
-              Back
+              {submitting ? "Sending..." : "Request callback"}
             </button>
-            <div className="flex gap-2">
-              {step < STEPS - 1 ? (
-                <button
-                  type="button"
-                  className="cta-digital-present rounded-xl bg-mad-gold px-5 py-2.5 text-sm font-bold text-mad-base"
-                  onClick={next}
-                >
-                  Continue
-                </button>
-              ) : (
-                <button
-                  type="button"
-                  className="cta-digital-present rounded-xl bg-mad-gold px-5 py-2.5 text-sm font-bold text-mad-base disabled:pointer-events-none disabled:bg-mad-gold-dark disabled:text-mad-base"
-                  disabled={submitting || !summaryReady}
-                  onClick={submit}
-                >
-                  {submitting ? "Sending…" : "Submit brief"}
-                </button>
-              )}
-            </div>
           </footer>
         ) : null}
       </div>

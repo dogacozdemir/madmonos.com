@@ -12,7 +12,7 @@ import { useTeamSpotlightNav } from "@/components/providers/team-spotlight-nav-c
 gsap.registerPlugin(ScrollTrigger);
 
 /**
- * Scroll progress 0 → 1 maps to floatIndex 0 → 3 (thirds: 0%, 33.3%, 66.6%, 100% on members).
+ * Scroll progress 0 → 1 maps to floatIndex 0 → n-1 (equal snap stops across members).
  * Plateau keeps the active character (and copy) parked longer — snap on ScrollTrigger does the rest.
  */
 function dwellWeight(i: number, floatIndex: number, plateau = 0.34) {
@@ -26,9 +26,10 @@ function dwellWeight(i: number, floatIndex: number, plateau = 0.34) {
 }
 
 function splitDisplayName(fullName: string): { line1: string; line2: string } {
-  const parts = fullName.trim().split(/\s+/).filter(Boolean);
+  const upperName = fullName.toLocaleUpperCase("tr-TR");
+  const parts = upperName.trim().split(/\s+/).filter(Boolean);
   if (parts.length <= 1) {
-    return { line1: fullName, line2: "" };
+    return { line1: upperName, line2: "" };
   }
   const line2 = parts.pop() ?? "";
   const line1 = parts.join(" ");
@@ -59,6 +60,11 @@ export function SpotlightTeamStage() {
     if (!section || !pin || !stage || !beamMove) return;
 
     const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    const mobileLayout = window.matchMedia("(max-width: 1023px)").matches;
+    const mobileMql = window.matchMedia("(max-width: 1023px)");
+    const narrowMql = window.matchMedia("(max-width: 480px)");
+    let mobileLayoutActive = mobileMql.matches;
+    let narrowLayoutActive = narrowMql.matches;
 
     let reducedIO: IntersectionObserver | null = null;
 
@@ -90,22 +96,17 @@ export function SpotlightTeamStage() {
       return gsap.utils.interpolate(centers[i0]!, centers[i1]!, t);
     };
 
-    const isMobileTeamLayout = () =>
-      typeof window !== "undefined" &&
-      window.matchMedia("(max-width: 1023px)").matches;
-
     const applyMemberAndText = (progress: number) => {
       const floatIndex = progress * (n - 1);
-      const mobile = isMobileTeamLayout();
-      const narrow =
-        typeof window !== "undefined" && window.matchMedia("(max-width: 480px)").matches;
+      const mobile = mobileLayoutActive;
+      const narrow = narrowLayoutActive;
 
       const styleFigure = (el: HTMLElement | null, i: number) => {
         if (!el) return;
         const w = dwellWeight(i, floatIndex);
         const gray = 1 - w;
         const op = 0.1 + 0.9 * w;
-        const sc = 1 + (narrow || mobile ? 0.06 : 0.1) * w;
+        const sc = 1 + (narrow || mobile ? 0.11 : 0.18) * w;
         const br = 1 + 0.2 * w;
         gsap.set(el, {
           filter: `grayscale(${gray}) brightness(${br})`,
@@ -152,7 +153,7 @@ export function SpotlightTeamStage() {
     };
 
     const ctx = gsap.context(() => {
-      const mobileInit = isMobileTeamLayout();
+      const mobileInit = mobileLayoutActive;
       gsap.set(beamMove, { x: mobileInit ? 0 : spotlightX(0) });
       if (mobileTrackRef.current)
         gsap.set(mobileTrackRef.current, { xPercent: 0, x: 0 });
@@ -189,7 +190,7 @@ export function SpotlightTeamStage() {
       });
 
       if (reduced) {
-        const mob = isMobileTeamLayout();
+        const mob = mobileLayoutActive;
         if (mob) {
           gsap.set(beamMove, { x: 0 });
           if (mobileTrackRef.current) gsap.set(mobileTrackRef.current, { xPercent: 0 });
@@ -201,7 +202,7 @@ export function SpotlightTeamStage() {
                 ? "grayscale(0) brightness(1.2)"
                 : "grayscale(1) brightness(1)",
               opacity: on ? 1 : 0.1,
-              scale: on ? 1.1 : 1,
+              scale: on ? 1.18 : 1,
               transformOrigin: "50% 98%",
             });
           });
@@ -216,7 +217,7 @@ export function SpotlightTeamStage() {
                 ? "grayscale(0) brightness(1.2)"
                 : "grayscale(1) brightness(1)",
               opacity: on ? 1 : 0.1,
-              scale: on ? 1.1 : 1,
+              scale: on ? 1.18 : 1,
               transformOrigin: "50% 98%",
             });
           });
@@ -235,15 +236,17 @@ export function SpotlightTeamStage() {
           trigger: section,
           start: "top top",
           end: "bottom bottom",
-          pin: pin,
+          pin,
           pinSpacing: true,
           scrub: 1.15,
-          snap: {
-            snapTo: [0, 1 / 3, 2 / 3, 1],
-            duration: { min: 0.28, max: 0.62 },
-            delay: 0.04,
-            ease: "power3.inOut",
-          },
+          snap: mobileLayout
+            ? undefined
+            : {
+                snapTo: Array.from({ length: n }, (_, i) => i / Math.max(1, n - 1)),
+                duration: { min: 0.28, max: 0.62 },
+                delay: 0.04,
+                ease: "power3.inOut",
+              },
           invalidateOnRefresh: true,
           refreshPriority: -2,
           anticipatePin: 0,
@@ -273,14 +276,19 @@ export function SpotlightTeamStage() {
       reducedIO.observe(section);
     }
 
-    const teamLayoutMql = window.matchMedia("(max-width: 1023px)");
-    const onTeamLayoutChange = () => scheduleScrollTriggerRefresh();
-    teamLayoutMql.addEventListener("change", onTeamLayoutChange);
+    const onLayoutMediaChange = () => {
+      mobileLayoutActive = mobileMql.matches;
+      narrowLayoutActive = narrowMql.matches;
+      scheduleScrollTriggerRefresh();
+    };
+    mobileMql.addEventListener("change", onLayoutMediaChange);
+    narrowMql.addEventListener("change", onLayoutMediaChange);
 
     scheduleScrollTriggerRefresh();
 
     return () => {
-      teamLayoutMql.removeEventListener("change", onTeamLayoutChange);
+      mobileMql.removeEventListener("change", onLayoutMediaChange);
+      narrowMql.removeEventListener("change", onLayoutMediaChange);
       setTeamSpotlightActive(false);
       ctx.revert();
       reducedIO?.disconnect();
@@ -371,7 +379,7 @@ export function SpotlightTeamStage() {
         ref={pinRef}
         className={cn(
           "relative flex h-screen min-h-[100svh] w-full flex-col overflow-hidden",
-          "sticky top-0 bg-mad-void"
+          "bg-mad-void"
         )}
       >
         <svg
@@ -449,16 +457,16 @@ export function SpotlightTeamStage() {
           aria-hidden
         />
 
-        <div className="relative z-[8] flex min-h-0 flex-1 flex-col overflow-hidden overscroll-none pt-[clamp(8.5rem,18svh,10.5rem)] md:pt-[9.75rem] lg:pt-[10rem]">
+        <div className="relative z-[8] flex min-h-0 flex-1 flex-col overflow-hidden pt-[clamp(8.5rem,18svh,10.5rem)] md:pt-[9.75rem] lg:pt-[10rem]">
           <div
             ref={stageRef}
             className={cn(
-              "relative mx-auto flex min-h-0 w-full max-w-[min(100%,1600px)] flex-1 flex-col overflow-x-clip overscroll-none",
-              "max-h-[min(62svh,720px)] pl-[max(0.75rem,env(safe-area-inset-left))] pr-[max(0.75rem,env(safe-area-inset-right))] sm:pl-4 sm:pr-4 md:max-h-[min(64svh,800px)] md:px-8 lg:max-w-[min(94vw,1800px)] lg:px-12 xl:px-14 2xl:max-w-[min(92vw,1920px)]"
+              "relative mx-auto flex min-h-0 w-full max-w-[min(100%,1600px)] flex-1 flex-col overflow-x-clip",
+              "max-h-[min(70svh,840px)] pl-[max(0.75rem,env(safe-area-inset-left))] pr-[max(0.75rem,env(safe-area-inset-right))] sm:pl-4 sm:pr-4 md:max-h-[min(72svh,920px)] md:px-8 lg:max-w-[min(97vw,2040px)] lg:px-8 xl:px-10 2xl:max-w-[min(96vw,2240px)]"
             )}
             style={{ perspective: "1400px" }}
           >
-            {/* Mobil: tek görünüm, scroll ile şerit sağdan sola; lg+: 4 sütun grid */}
+            {/* Mobil: tek görünüm, scroll ile şerit sağdan sola; lg+: üye sayısı kadar kolon */}
             <div
               className={cn(
                 "relative min-h-0 w-full min-w-0 max-w-full flex-1 overflow-hidden",
@@ -507,9 +515,10 @@ export function SpotlightTeamStage() {
               </div>
               <div
                 className={cn(
-                  "relative hidden min-h-0 w-full min-w-0 max-w-full flex-1 lg:grid lg:grid-cols-4 lg:items-end lg:justify-items-center",
-                  "gap-[0.35rem] px-1 sm:gap-1.5 sm:px-2 md:gap-3 md:px-3 lg:gap-6 lg:px-4 xl:gap-8 2xl:gap-10"
+                  "relative hidden min-h-0 w-full min-w-0 max-w-full flex-1 lg:grid lg:items-end lg:justify-items-center",
+                  "gap-[0.35rem] px-1 sm:gap-1.5 sm:px-2 md:gap-3 md:px-3 lg:gap-3 lg:px-2 xl:gap-4 2xl:gap-5"
                 )}
+                style={{ gridTemplateColumns: `repeat(${n}, minmax(0, 1fr))` }}
               >
                 {TEAM_MEMBERS.map((member, i) => (
                   <figure

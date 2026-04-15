@@ -80,7 +80,7 @@ export function DiscoveryFab() {
       aria-haspopup="dialog"
       aria-expanded={isOpen}
       aria-controls="discovery-modal"
-      aria-label="Open discovery brief"
+      aria-label="Open request callback form"
       onClick={open}
       onMouseEnter={() => {
         hovering.current = true;
@@ -98,12 +98,12 @@ export function DiscoveryFab() {
         }
       }}
       className={cn(
-        "cta-digital-present fixed bottom-6 right-4 z-[70] inline-flex min-h-12 min-w-12 items-center justify-center rounded-full border border-[color:var(--mad-border-highlight-heavy)] px-5 py-3 will-change-transform md:right-8",
+        "cta-digital-present fixed bottom-6 left-4 z-[70] inline-flex min-h-12 min-w-12 items-center justify-center rounded-full border border-[color:var(--mad-border-highlight-heavy)] px-5 py-3 will-change-transform md:left-auto md:right-8",
         "bg-mad-deep text-xs font-extrabold uppercase tracking-[0.2em] text-mad-aaa-gold shadow-[var(--mad-fab-shadow)] backdrop-blur-xl"
       )}
       style={{ transform: "translate3d(0,0,0)" }}
     >
-      Brief us
+      Contact
     </button>
   );
 }

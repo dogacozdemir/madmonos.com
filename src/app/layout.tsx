@@ -4,7 +4,6 @@ import { Geist, Geist_Mono, Montserrat, Oswald } from "next/font/google";
 import "./globals.css";
 import { Providers } from "@/components/providers/providers";
 import { AppShell } from "@/components/layout/app-shell";
-import { StructuredData } from "@/components/structured-data";
 import { CRITICAL_INLINE_CSS } from "@/lib/critical-styles";
 import { SITE_DESCRIPTION, SITE_NAME, SITE_OG_IMAGE, SITE_URL } from "@/lib/site";
 
@@ -24,7 +23,7 @@ const geistSans = Geist({
   subsets: ["latin"],
   display: "optional",
   adjustFontFallback: true,
-  preload: true,
+  preload: false,
 });
 
 const geistMono = Geist_Mono({
@@ -130,7 +129,6 @@ export default function RootLayout({
         />
       </head>
       <body className="min-h-full bg-mad-base font-sans text-mad-aaa-body">
-        <StructuredData />
         <Providers>
           <AppShell footer={<SiteFooter />}>{children}</AppShell>
         </Providers>

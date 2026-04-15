@@ -1,0 +1,758 @@
+/* Mescubook Works layout — scoped; Madmonos Dark & Gold tokens */
+
+.mad-portfolio-scope {
+  --proj-dial-view-h: 220px;
+  --proj-tick-gap: 2px;
+  --proj-tick-h: 3px;
+  --proj-stage-w: min(52vw, 720px);
+  --proj-stage-h: min(56vh, 640px);
+  --proj-deco-top-offset: calc(env(safe-area-inset-top, 0px) + 5.1rem);
+  color: var(--mad-text-aaa-primary);
+}
+
+.mad-portfolio-scope .proj {
+  position: relative;
+  width: 100%;
+  height: 100vh;
+  height: 100dvh;
+  min-height: 100vh;
+  min-height: 100dvh;
+  overflow: hidden;
+  isolation: isolate;
+  background: var(--mad-base);
+}
+
+.mad-portfolio-scope .proj[data-view="list"] {
+  height: auto;
+  min-height: 100dvh;
+  overflow: visible;
+}
+
+.mad-portfolio-scope .proj[data-view="list"] .proj__orbit,
+.mad-portfolio-scope .proj[data-view="list"] .proj__flash,
+.mad-portfolio-scope .proj[data-view="list"] .proj__dial,
+.mad-portfolio-scope .proj[data-view="list"] .proj__images,
+.mad-portfolio-scope .proj[data-view="list"] .proj__titles,
+.mad-portfolio-scope .proj[data-view="list"] .proj__underline,
+.mad-portfolio-scope .proj[data-view="list"] .proj__info,
+.mad-portfolio-scope .proj[data-view="list"] .proj__year-wrap,
+.mad-portfolio-scope .proj[data-view="list"] .proj__scroll-hint,
+.mad-portfolio-scope .proj[data-view="list"] .proj__counter,
+.mad-portfolio-scope .proj[data-view="list"] .proj__crosshair {
+  display: none !important;
+}
+
+.mad-portfolio-scope .proj[data-view="slider"] .proj__list {
+  display: none !important;
+}
+
+.mad-portfolio-scope .proj[data-view="list"] .proj__list {
+  display: block;
+  position: relative;
+  padding: 0 max(1rem, env(safe-area-inset-right)) 3rem max(1rem, env(safe-area-inset-left));
+  margin-top: 0.5rem;
+}
+
+/* Ambient */
+.mad-portfolio-scope .proj__glow {
+  position: absolute;
+  inset: -28%;
+  z-index: 0;
+  pointer-events: none;
+  background:
+    radial-gradient(ellipse 72% 58% at 50% 100%, color-mix(in srgb, var(--mad-gold) 20%, transparent) 0%, transparent 54%),
+    radial-gradient(ellipse 52% 42% at 12% 10%, color-mix(in srgb, var(--mad-deep) 92%, var(--mad-gold) 8%) 0%, transparent 46%),
+    radial-gradient(ellipse 48% 38% at 90% 16%, color-mix(in srgb, var(--mad-base) 78%, var(--mad-gold) 6%) 0%, transparent 42%),
+    radial-gradient(ellipse 92% 72% at 50% 48%, var(--mad-deep) 0%, var(--mad-base) 44%, var(--mad-void) 100%);
+}
+
+/* Left vertical rail */
+.mad-portfolio-scope .proj__deco-left {
+  position: absolute;
+  z-index: 48;
+  left: max(0.5rem, env(safe-area-inset-left));
+  top: 50%;
+  translate: 0 -50%;
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  pointer-events: none;
+}
+
+.mad-portfolio-scope .proj[data-view="list"] .proj__deco-left {
+  display: none;
+}
+
+.mad-portfolio-scope .proj__vertical-text {
+  font-family: var(--font-geist-mono), ui-monospace, monospace;
+  font-size: 8px;
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
+  color: color-mix(in srgb, var(--mad-text-aaa-body) 75%, transparent);
+  writing-mode: vertical-rl;
+  transform: rotate(180deg);
+  white-space: nowrap;
+}
+
+.mad-portfolio-scope .proj__line {
+  width: 1px;
+  height: min(42vh, 320px);
+  background: linear-gradient(
+    180deg,
+    transparent,
+    var(--mad-border-gold-faint) 15%,
+    var(--mad-border-gold-muted) 50%,
+    var(--mad-border-gold-faint) 85%,
+    transparent
+  );
+}
+
+/* Top bar: sort · dash · toggle */
+.mad-portfolio-scope .proj__deco-top {
+  position: absolute;
+  z-index: 50;
+  left: max(1rem, env(safe-area-inset-left));
+  right: max(1rem, env(safe-area-inset-right));
+  top: var(--proj-deco-top-offset);
+  display: flex;
+  align-items: center;
+  gap: 0.75rem 1rem;
+  pointer-events: none;
+}
+
+.mad-portfolio-scope .proj__deco-top > * {
+  pointer-events: auto;
+}
+
+.mad-portfolio-scope .proj__sort {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.35rem 0.5rem;
+  flex-shrink: 0;
+}
+
+.mad-portfolio-scope .proj__sort-label {
+  font-family: var(--font-geist-mono), ui-monospace, monospace;
+  font-size: 8px;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: color-mix(in srgb, var(--mad-text-aaa-body) 88%, transparent);
+  margin-right: 0.25rem;
+}
+
+.mad-portfolio-scope .proj__sort-btn {
+  font-family: var(--font-geist-mono), ui-monospace, monospace;
+  font-size: 8px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  padding: 0;
+  border: none;
+  background: none;
+  cursor: pointer;
+  color: color-mix(in srgb, var(--mad-text-aaa-body) 85%, transparent);
+  transition: color 0.2s ease;
+}
+
+.mad-portfolio-scope .proj__sort-btn:hover {
+  color: var(--mad-gold);
+}
+
+.mad-portfolio-scope .proj__sort-btn.is-active {
+  color: var(--mad-text-aaa-primary);
+  font-weight: 600;
+}
+
+.mad-portfolio-scope .proj__sort-sep {
+  font-size: 8px;
+  color: var(--mad-border-gold-muted);
+  user-select: none;
+}
+
+.mad-portfolio-scope .proj__dash-line {
+  flex: 1;
+  min-width: 1.5rem;
+  height: 1px;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    var(--mad-border-gold-faint) 8%,
+    var(--mad-border-gold-muted) 50%,
+    var(--mad-border-gold-faint) 92%,
+    transparent
+  );
+  opacity: 0.85;
+}
+
+.mad-portfolio-scope .proj__view-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  flex-shrink: 0;
+  padding: 0;
+  border: none;
+  background: none;
+  cursor: pointer;
+  font-family: var(--font-geist-mono), ui-monospace, monospace;
+  font-size: 8px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: color-mix(in srgb, var(--mad-text-aaa-body) 88%, transparent);
+}
+
+.mad-portfolio-scope .proj__view-opt {
+  transition: color 0.2s ease;
+}
+
+.mad-portfolio-scope .proj__view-opt.is-active {
+  color: var(--mad-text-aaa-primary);
+  font-weight: 600;
+}
+
+.mad-portfolio-scope .proj__view-opt:not(.is-active):hover {
+  color: var(--mad-gold);
+}
+
+.mad-portfolio-scope .proj__view-sep {
+  color: var(--mad-border-gold-muted);
+  user-select: none;
+}
+
+/* Corners */
+.mad-portfolio-scope .proj__deco-corners {
+  position: absolute;
+  inset: 0;
+  z-index: 42;
+  pointer-events: none;
+}
+
+.mad-portfolio-scope .proj__corner {
+  position: absolute;
+  width: 36px;
+  height: 36px;
+  border-color: var(--mad-border-gold-faint);
+  border-style: solid;
+}
+
+.mad-portfolio-scope .proj__corner--tl {
+  left: max(0.55rem, env(safe-area-inset-left));
+  top: max(0.55rem, env(safe-area-inset-top));
+  border-width: 1px 0 0 1px;
+}
+
+.mad-portfolio-scope .proj__corner--tr {
+  right: max(0.55rem, env(safe-area-inset-right));
+  top: max(0.55rem, env(safe-area-inset-top));
+  border-width: 1px 1px 0 0;
+}
+
+.mad-portfolio-scope .proj__corner--bl {
+  left: max(0.55rem, env(safe-area-inset-left));
+  bottom: max(0.55rem, env(safe-area-inset-bottom));
+  border-width: 0 0 1px 1px;
+}
+
+.mad-portfolio-scope .proj__corner--br {
+  right: max(0.55rem, env(safe-area-inset-right));
+  bottom: max(0.55rem, env(safe-area-inset-bottom));
+  border-width: 0 1px 1px 0;
+}
+
+/* Crosshair — two spans */
+.mad-portfolio-scope .proj__crosshair {
+  position: absolute;
+  left: 50%;
+  top: 46%;
+  width: min(118vw, 1680px);
+  height: min(118vh, 1080px);
+  translate: -50% -50%;
+  z-index: 4;
+  pointer-events: none;
+  opacity: 0.11;
+}
+
+.mad-portfolio-scope .proj__crosshair span:nth-child(1) {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 50%;
+  height: 1px;
+  margin-top: -0.5px;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    var(--mad-highlight) 44%,
+    var(--mad-highlight) 56%,
+    transparent
+  );
+}
+
+.mad-portfolio-scope .proj__crosshair span:nth-child(2) {
+  position: absolute;
+  left: 50%;
+  top: 0;
+  bottom: 0;
+  width: 1px;
+  margin-left: -0.5px;
+  background: linear-gradient(
+    180deg,
+    transparent,
+    var(--mad-highlight) 44%,
+    var(--mad-highlight) 56%,
+    transparent
+  );
+}
+
+/* Orbit SVG */
+.mad-portfolio-scope .proj__orbit {
+  position: absolute;
+  left: 50%;
+  top: 44%;
+  translate: -50% -50%;
+  z-index: 3;
+  pointer-events: none;
+  color: var(--mad-gold);
+  width: min(78vw, 920px);
+  height: min(78vw, 920px);
+  animation: proj-orbit-rotate 64s linear infinite;
+}
+
+.mad-portfolio-scope .proj__orbit svg {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+@keyframes proj-orbit-rotate {
+  to {
+    rotate: 360deg;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .mad-portfolio-scope .proj__orbit {
+    animation: none;
+  }
+}
+
+/* 4×4 dot grid */
+.mad-portfolio-scope .proj__grid-deco {
+  position: absolute;
+  right: max(3.5rem, calc(env(safe-area-inset-right) + 2.5rem));
+  bottom: max(5.5rem, calc(env(safe-area-inset-bottom) + 4.5rem));
+  z-index: 41;
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 10px;
+  pointer-events: none;
+  opacity: 0.35;
+}
+
+.mad-portfolio-scope .proj[data-view="list"] .proj__grid-deco {
+  display: none;
+}
+
+.mad-portfolio-scope .proj__grid-deco span {
+  width: 3px;
+  height: 3px;
+  border-radius: 50%;
+  background: var(--mad-text-aaa-body);
+  opacity: 0.55;
+}
+
+/* Counter */
+.mad-portfolio-scope .proj__counter {
+  position: absolute;
+  z-index: 49;
+  left: max(1.15rem, env(safe-area-inset-left));
+  top: calc(var(--proj-deco-top-offset) + 2.35rem);
+  display: flex;
+  align-items: baseline;
+  gap: 0.15rem;
+  font-family: var(--font-montserrat), system-ui, sans-serif;
+  font-weight: 300;
+  pointer-events: none;
+  line-height: 1;
+}
+
+.mad-portfolio-scope .proj__counter-num {
+  font-size: clamp(1.5rem, 3.4vw, 2.15rem);
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  color: var(--mad-text-aaa-primary);
+}
+
+.mad-portfolio-scope .proj__counter-current {
+  display: inline-block;
+  will-change: transform, opacity;
+}
+
+.mad-portfolio-scope .proj__counter-sep {
+  font-size: clamp(1rem, 2vw, 1.35rem);
+  font-weight: 300;
+  opacity: 0.45;
+  margin: 0 0.08em;
+}
+
+.mad-portfolio-scope .proj__counter-total {
+  font-size: clamp(0.95rem, 1.85vw, 1.2rem);
+  font-weight: 300;
+  opacity: 0.5;
+  letter-spacing: 0.04em;
+}
+
+/* Flash */
+.mad-portfolio-scope .proj__flash {
+  position: absolute;
+  inset: 0;
+  z-index: 24;
+  pointer-events: none;
+  background: #fff;
+  opacity: 0;
+  mix-blend-mode: plus-lighter;
+  will-change: opacity;
+}
+
+/* Stage */
+.mad-portfolio-scope .proj__images {
+  position: absolute;
+  left: 50%;
+  top: 48%;
+  translate: -50% -50%;
+  width: var(--proj-stage-w);
+  height: var(--proj-stage-h);
+  max-width: calc(100vw - 2.25rem);
+  perspective: 1000px;
+  perspective-origin: 50% 50%;
+  transform-style: preserve-3d;
+  z-index: 12;
+  pointer-events: auto;
+}
+
+.mad-portfolio-scope .proj__img {
+  position: absolute;
+  inset: 0;
+  border-radius: 5px;
+  overflow: hidden;
+  box-shadow: var(--mad-drop-image-deep), 0 0 0 1px var(--mad-border-gold-faint);
+  opacity: 0;
+  pointer-events: none;
+  will-change: transform, opacity, filter;
+}
+
+.mad-portfolio-scope .proj__img-inner {
+  position: absolute;
+  inset: 0;
+  transform-origin: 50% 50%;
+  will-change: transform, filter;
+}
+
+.mad-portfolio-scope .proj__img-inner img {
+  object-fit: cover;
+}
+
+/* Titles stack */
+.mad-portfolio-scope .proj__titles {
+  position: absolute;
+  left: 50%;
+  translate: -50% 0;
+  bottom: max(11.5rem, calc(env(safe-area-inset-bottom) + 9.5rem));
+  width: min(94vw, 1120px);
+  z-index: 46;
+  pointer-events: none;
+  text-align: center;
+  min-height: clamp(4.5rem, 14vh, 8rem);
+}
+
+.mad-portfolio-scope .proj__title {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 50%;
+  translate: 0 -50%;
+  margin: 0;
+  font-family: var(--font-display), system-ui, sans-serif;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  text-transform: uppercase;
+  line-height: 0.98;
+  color: var(--mad-text-aaa-primary);
+  text-shadow: 0 2px 40px rgba(0, 0, 0, 0.45);
+  opacity: 0;
+  transition: opacity 0.35s ease;
+}
+
+.mad-portfolio-scope .proj__title.is-active {
+  opacity: 1;
+}
+
+/* Underline */
+.mad-portfolio-scope .proj__underline {
+  position: absolute;
+  left: 50%;
+  translate: -50% 0;
+  bottom: max(10.75rem, calc(env(safe-area-inset-bottom) + 8.75rem));
+  width: min(56vw, 420px);
+  height: 2px;
+  z-index: 45;
+  pointer-events: none;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    color-mix(in srgb, var(--mad-gold) 55%, transparent) 20%,
+    var(--mad-gold) 50%,
+    color-mix(in srgb, var(--mad-gold) 55%, transparent) 80%,
+    transparent
+  );
+  opacity: 0.55;
+}
+
+/* Bottom info */
+.mad-portfolio-scope .proj__info {
+  position: absolute;
+  left: max(1.15rem, env(safe-area-inset-left));
+  bottom: max(1.15rem, env(safe-area-inset-bottom));
+  z-index: 47;
+  max-width: min(42vw, 380px);
+  pointer-events: none;
+  min-height: 3.25rem;
+}
+
+.mad-portfolio-scope .proj__desc {
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  opacity: 0;
+  transition: opacity 0.35s ease;
+  text-align: left;
+}
+
+.mad-portfolio-scope .proj__desc.is-active {
+  opacity: 1;
+}
+
+.mad-portfolio-scope .proj__client {
+  font-family: var(--font-display), system-ui, sans-serif;
+  font-weight: 700;
+  font-size: clamp(0.68rem, 1.15vw, 0.8rem);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  margin: 0 0 0.35rem;
+  color: var(--mad-text-aaa-primary);
+}
+
+.mad-portfolio-scope .proj__role {
+  font-family: var(--font-montserrat), system-ui, sans-serif;
+  font-weight: 300;
+  font-size: clamp(0.65rem, 1.05vw, 0.75rem);
+  letter-spacing: 0.08em;
+  line-height: 1.45;
+  margin: 0;
+  color: color-mix(in srgb, var(--mad-text-aaa-body) 92%, transparent);
+}
+
+/* Year */
+.mad-portfolio-scope .proj__year-wrap {
+  position: absolute;
+  right: max(2.75rem, calc(env(safe-area-inset-right) + 1.75rem));
+  bottom: max(1.15rem, env(safe-area-inset-bottom));
+  z-index: 47;
+  min-width: 4rem;
+  min-height: 1.25rem;
+  pointer-events: none;
+  text-align: right;
+}
+
+.mad-portfolio-scope .proj__year {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  font-family: var(--font-geist-mono), ui-monospace, monospace;
+  font-size: 9px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: color-mix(in srgb, var(--mad-text-aaa-body) 85%, transparent);
+  opacity: 0;
+  transition: opacity 0.35s ease;
+  white-space: nowrap;
+}
+
+.mad-portfolio-scope .proj__year.is-active {
+  opacity: 1;
+}
+
+/* Dial */
+.mad-portfolio-scope .proj__dial {
+  position: absolute;
+  z-index: 44;
+  right: max(0.55rem, env(safe-area-inset-right));
+  top: 50%;
+  translate: 0 -50%;
+  width: 24px;
+  height: var(--proj-dial-view-h);
+  overflow: hidden;
+  pointer-events: none;
+  cursor: grab;
+  mask-image: linear-gradient(to bottom, transparent, black 10%, black 90%, transparent);
+}
+
+.mad-portfolio-scope .proj__dial-track {
+  position: absolute;
+  left: 50%;
+  top: 0;
+  translate: -50% 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--proj-tick-gap);
+  will-change: transform;
+  padding-block: 0.5rem;
+}
+
+.mad-portfolio-scope .proj__dial-tick {
+  width: 10px;
+  height: var(--proj-tick-h);
+  border-radius: 1px;
+  background: color-mix(in srgb, var(--mad-text-aaa-body) 32%, transparent);
+  flex-shrink: 0;
+}
+
+.mad-portfolio-scope .proj__dial-tick.is-active {
+  width: 14px;
+  background: var(--mad-gold);
+  box-shadow: 0 0 12px color-mix(in srgb, var(--mad-gold) 42%, transparent);
+}
+
+.mad-portfolio-scope .proj__links {
+  position: absolute;
+  width: 0;
+  height: 0;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+}
+
+/* Scroll hint */
+.mad-portfolio-scope .proj__scroll-hint {
+  position: absolute;
+  left: 50%;
+  bottom: max(6.25rem, calc(env(safe-area-inset-bottom) + 5rem));
+  translate: -50% 0;
+  z-index: 43;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.35rem;
+  font-family: var(--font-geist-mono), ui-monospace, monospace;
+  font-size: 8px;
+  letter-spacing: 0.38em;
+  text-transform: uppercase;
+  color: color-mix(in srgb, var(--mad-text-aaa-body) 62%, transparent);
+  pointer-events: none;
+}
+
+.mad-portfolio-scope .proj__scroll-hint svg {
+  color: color-mix(in srgb, var(--mad-gold) 75%, var(--mad-text-aaa-body));
+  opacity: 0.85;
+  animation: proj-scroll-nudge 1.75s ease-in-out infinite;
+}
+
+@keyframes proj-scroll-nudge {
+  0%,
+  100% {
+    transform: translateY(0);
+    opacity: 0.4;
+  }
+  50% {
+    transform: translateY(6px);
+    opacity: 1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .mad-portfolio-scope .proj__scroll-hint svg {
+    animation: none;
+  }
+}
+
+/* —— List —— */
+.mad-portfolio-scope .proj__list {
+  display: none;
+}
+
+.mad-portfolio-scope .proj__list-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.8125rem;
+}
+
+.mad-portfolio-scope .proj__list-table tbody tr {
+  border-bottom: 1px solid var(--mad-border-gold-faint);
+  transition: background-color 0.2s ease;
+}
+
+.mad-portfolio-scope .proj__list-table tbody tr:hover {
+  background: color-mix(in srgb, var(--mad-gold) 7%, transparent);
+}
+
+.mad-portfolio-scope .proj__list-num {
+  font-family: var(--font-montserrat), system-ui, sans-serif;
+  font-weight: 300;
+  font-size: clamp(0.85rem, 1.6vw, 1rem);
+  color: var(--mad-gold);
+  width: 3rem;
+  padding: 0.85rem 0.65rem 0.85rem 0;
+  vertical-align: middle;
+}
+
+.mad-portfolio-scope .proj__list-name {
+  font-family: var(--font-display), system-ui, sans-serif;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  font-size: 0.72rem;
+  line-height: 1.35;
+  padding: 0.85rem 0.75rem;
+  vertical-align: middle;
+  color: var(--mad-text-aaa-primary);
+}
+
+.mad-portfolio-scope .proj__list-client,
+.mad-portfolio-scope .proj__list-role,
+.mad-portfolio-scope .proj__list-year {
+  font-family: var(--font-montserrat), system-ui, sans-serif;
+  font-weight: 300;
+  font-size: 0.75rem;
+  letter-spacing: 0.04em;
+  padding: 0.85rem 0.65rem;
+  vertical-align: middle;
+  color: color-mix(in srgb, var(--mad-text-aaa-body) 95%, transparent);
+}
+
+.mad-portfolio-scope .proj__list-year {
+  font-family: var(--font-geist-mono), ui-monospace, monospace;
+  font-size: 9px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  text-align: right;
+  white-space: nowrap;
+  color: color-mix(in srgb, var(--mad-text-aaa-body) 80%, transparent);
+}
+
+.mad-portfolio-scope .proj__list-img-preview {
+  position: fixed;
+  z-index: 100;
+  width: 200px;
+  height: 120px;
+  border-radius: 4px;
+  border: 1px solid var(--mad-border-gold-muted);
+  background-size: cover;
+  background-position: center;
+  pointer-events: none;
+  opacity: 0;
+  box-shadow: var(--mad-shadow-modal);
+  transition: opacity 0.2s ease;
+}
+
+.mad-portfolio-scope .proj__list-img-preview.is-visible {
+  opacity: 1;
+}

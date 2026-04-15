@@ -8,9 +8,10 @@ import { cn } from "@/lib/utils";
 import { KineticProjectRailMobile } from "@/components/kinetic-project-rail-mobile";
 
 const SLIDES = [...DIGITAL_PRESENT_PROJECTS];
+const PROJECT_BG_VIDEOS = ["/videos/hero1.mp4", "/videos/hero2.mp4", "/videos/hero3.mp4", "/videos/hero4.mp4"] as const;
 /** Mobil: dar genişlik görseli (Lighthouse LCP); masaüstü geniş breakpoint’ler. */
 const IMG_SIZES =
-  "(max-width: 768px) min(40vw, 360px), (max-width: 1024px) min(90vw, 640px), (max-width: 1536px) 56vw, 900px";
+  "(max-width: 768px) 92vw, (max-width: 1024px) 84vw, (max-width: 1536px) 72vw, 1200px";
 
 /**
  * Digital Present: tek görsel panel; sağ rail aktif projeyi gösterir (scroll eşiği: viewport merkezi).
@@ -242,11 +243,8 @@ export function StickySolutions() {
       });
 
       onReducedChange = () => {
-        if (!reducedMql || reducedMql.matches) return;
-        scheduleScrollTriggerRefresh();
-        requestAnimationFrame(() => {
-          flushSectionSync();
-        });
+        teardown();
+        if (desktopMql.matches && !disposed) void bootDesktopGsap();
       };
       reducedMql.addEventListener("change", onReducedChange);
     };
@@ -266,9 +264,6 @@ export function StickySolutions() {
     };
   }, []);
 
-  const n = SLIDES.length;
-  const idxPad = String(n).padStart(2, "0");
-
   return (
     <section
       ref={sectionRef}
@@ -276,12 +271,34 @@ export function StickySolutions() {
       className="relative z-[30] border-y border-[color:var(--mad-border-accent-faint)] bg-mad-base [transform:translate3d(0,0,0)]"
       aria-label="Selected client work and project lines"
     >
+      <div
+        className="pointer-events-none absolute -bottom-[24svh] -top-[24svh] right-0 z-[1] hidden w-[40%] bg-black lg:block"
+        aria-hidden
+      />
       <div className="md:hidden">
         <KineticProjectRailMobile className="border-b border-[color:var(--mad-border-accent-faint)] bg-mad-base py-10" />
       </div>
 
       <div className="hidden w-full max-w-[1800px] md:mx-auto md:grid lg:grid-cols-10">
         <div className="sticky-sol-column-seam relative isolate overflow-hidden lg:col-span-6 lg:border-r lg:border-[color:var(--mad-border-gold-soft)] lg:pr-3">
+          <div className="pointer-events-none absolute inset-0 z-0 overflow-hidden" aria-hidden>
+            {SLIDES.map((slide, i) => (
+              <video
+                key={`project-bg-${slide.id}`}
+                className={cn(
+                  "absolute inset-0 h-full w-full object-cover transition-opacity duration-700 ease-[cubic-bezier(0.22,1,0.36,1)]",
+                  i === active ? "opacity-[0.16]" : "opacity-0"
+                )}
+                src={PROJECT_BG_VIDEOS[i % PROJECT_BG_VIDEOS.length]}
+                autoPlay
+                muted
+                loop
+                playsInline
+                preload="metadata"
+              />
+            ))}
+            <div className="absolute inset-0 bg-[#050308]/68" />
+          </div>
           <div className="sticky-sol-media-mesh pointer-events-none absolute inset-0 z-0" aria-hidden />
           <div
             className="pointer-events-none absolute inset-0 z-0 bg-[radial-gradient(ellipse_95%_70%_at_10%_14%,var(--mad-grad-sticky-gold-mist)_0%,transparent_58%),radial-gradient(ellipse_75%_60%_at_92%_86%,var(--mad-grad-sticky-highlight-mist)_0%,transparent_50%)]"
@@ -305,13 +322,14 @@ export function StickySolutions() {
             </div>
           </div>
 
+          <div className="h-[6svh]" aria-hidden />
           {SLIDES.map((slide, panelIndex) => (
             <div
               key={slide.id}
               ref={(el) => {
                 segmentRefs.current[panelIndex] = el;
               }}
-              className="relative min-h-[88svh] w-full"
+              className="relative min-h-[94svh] w-full"
             >
               <div
                 ref={(el) => {
@@ -319,7 +337,7 @@ export function StickySolutions() {
                 }}
                 data-sticky-sol-panel
                 className={cn(
-                  "sticky-sol-panel sticky top-0 z-[2] flex min-h-0 flex-col items-center justify-center px-4 py-1.5 md:px-8 md:py-2 lg:px-10 lg:py-2",
+                  "sticky-sol-panel sticky top-0 z-[2] flex min-h-0 flex-col items-center justify-center px-3 py-1 md:px-5 md:py-1 lg:px-7 lg:py-1",
                   panelIndex === 0 && "z-[50]"
                 )}
               >
@@ -357,16 +375,15 @@ export function StickySolutions() {
                         {slide.description}
                       </p>
                     </div>
-                    <div className="sticky-sol-iris-surface relative z-[1] max-w-full overflow-hidden rounded-2xl [transform:translate3d(0,0,0)]">
-                      <div className="sticky-sol-card-vignette relative max-w-full overflow-hidden rounded-2xl border border-[color:var(--mad-border-gold-dim)] bg-[color:var(--mad-surface-panel-plum)] shadow-[var(--mad-shadow-elevated)]">
+                    <div className="sticky-sol-iris-surface sticky-sol-visual-stage relative z-[1] w-[min(94vw,1100px)] max-w-full overflow-hidden rounded-2xl [transform:translate3d(0,0,0)] lg:w-[min(96%,980px)] 2xl:w-[min(98%,1120px)]">
+                      <div className="sticky-sol-card-vignette relative aspect-[16/9] max-w-full overflow-hidden rounded-2xl border border-[color:var(--mad-border-gold-dim)] bg-[color:var(--mad-surface-panel-plum)] shadow-[var(--mad-shadow-elevated)]">
                         <Image
                           src={slide.image}
                           alt={slide.imageAlt}
-                          width={slide.width}
-                          height={slide.height}
+                          fill
                           sizes={IMG_SIZES}
-                          quality={70}
-                          className="block h-auto w-auto max-w-full"
+                          quality={78}
+                          className="block h-full w-full object-cover object-center"
                           draggable={false}
                           priority={panelIndex === 0}
                           fetchPriority={panelIndex === 0 ? "high" : undefined}
@@ -385,51 +402,62 @@ export function StickySolutions() {
               </div>
             </div>
           ))}
+          <div className="h-[6svh]" aria-hidden />
         </div>
 
         <aside
           ref={railAsideRef}
-          className="relative z-[4] hidden flex-col justify-center px-6 py-10 will-change-transform lg:sticky lg:top-0 lg:col-span-4 lg:flex lg:h-screen lg:bg-mad-base lg:px-10 lg:py-0 lg:shadow-[var(--mad-inset-rail-seam)]"
+          className="relative z-[4] hidden flex-col justify-center px-6 py-10 will-change-transform lg:sticky lg:top-0 lg:col-span-4 lg:flex lg:h-screen lg:bg-black lg:px-10 lg:py-0 lg:shadow-[var(--mad-inset-rail-seam)]"
         >
-          <p className="font-serif text-[10px] font-semibold not-italic tracking-wide text-mad-aaa-gold">
-            Project index
-          </p>
-          <div className="sticky-sol-rail-copy relative mx-auto mt-8 w-full max-w-[320px] lg:mx-0 lg:mt-10 lg:max-w-none lg:min-h-[min(36rem,72svh)]">
-            {SLIDES.map((slide, i) => (
-              <div
-                key={slide.id}
-                className={cn(
-                  "transition-opacity duration-[680ms] ease-[cubic-bezier(0.22,1,0.36,1)] motion-reduce:transition-none",
-                  i === active
-                    ? "relative z-10 flex min-h-[inherit] flex-col opacity-100"
-                    : "pointer-events-none absolute inset-0 z-0 flex min-h-[inherit] flex-col opacity-0"
-                )}
-                aria-hidden={i !== active}
-              >
-                <p className="font-mono text-sm md:text-base">
-                  <span className="text-mad-aaa-gold">{slide.id}</span>
-                  <span className="text-mad-aaa-body"> /{idxPad}</span>
-                </p>
-                <p className="mt-4 min-h-[3rem] text-xs font-bold uppercase leading-snug tracking-[0.22em] text-mad-aaa-body">
-                  {slide.clientCode}
-                </p>
-                {/* Sabit başlık alanı: uzun/kısa başlık geçişinde üst çizgi ve divider yerleri oynamaz */}
-                <div className="mt-5 flex min-h-[7.25rem] items-start md:min-h-[7.75rem] xl:min-h-[8.75rem]">
-                  <h2
-                    className="font-[family-name:var(--font-display)] text-3xl font-bold uppercase leading-[1.06] tracking-[-0.03em] text-mad-highlight md:text-4xl xl:text-[2.85rem]"
+          <div className="sticky-sol-rail-copy relative mx-auto flex w-full max-w-[320px] flex-col lg:mx-0 lg:max-w-none lg:min-h-[min(42rem,78svh)]">
+            <div className="ml-auto w-fit">
+              <div className="flex items-baseline tabular-nums text-[clamp(9rem,19vw,15rem)] font-[family-name:var(--font-montserrat)] font-black leading-[0.78] tracking-[-0.04em] text-mad-aaa-primary">
+                <span className="inline-flex h-[0.9em] items-center leading-[0.9]">0</span>
+                <span className="relative inline-flex h-[0.9em] overflow-hidden leading-[0.9]">
+                  <span
+                    className="flex flex-col gap-[0.02em] transition-transform duration-[680ms] ease-[cubic-bezier(0.22,1,0.36,1)] motion-reduce:transition-none"
+                    style={{ transform: `translateY(calc(-${active} * 0.92em))` }}
                   >
+                    {SLIDES.map((slide) => (
+                      <span
+                        key={`digit-${slide.id}`}
+                        className="flex h-[0.9em] items-center justify-center leading-[0.9]"
+                      >
+                        {slide.id.slice(-1)}
+                      </span>
+                    ))}
+                  </span>
+                </span>
+              </div>
+              <p className="mt-4 -translate-x-[0.7em] text-right text-xs font-semibold uppercase tracking-[0.2em] text-mad-aaa-gold md:text-sm">
+                What We Do
+              </p>
+            </div>
+
+            <div className="relative min-h-[19.5rem] w-full">
+              {SLIDES.map((slide, i) => (
+                <div
+                  key={`meta-${slide.id}`}
+                  className={cn(
+                    "transition-opacity duration-[680ms] ease-[cubic-bezier(0.22,1,0.36,1)] motion-reduce:transition-none",
+                    i === active
+                      ? "relative z-10 flex min-h-[inherit] flex-col justify-end opacity-100"
+                      : "pointer-events-none absolute inset-0 z-0 flex min-h-[inherit] flex-col justify-end opacity-0"
+                  )}
+                  aria-hidden={i !== active}
+                >
+                  <p className="text-left text-[11px] font-bold uppercase leading-snug tracking-[0.2em] text-mad-aaa-gold md:text-xs">
+                    {slide.clientCode}
+                  </p>
+                  <h2 className="mt-3 text-left font-[family-name:var(--font-display)] text-3xl font-bold uppercase leading-[1.06] tracking-[-0.03em] text-mad-highlight md:text-4xl xl:text-[2.85rem]">
                     {slide.title}
                   </h2>
+                  <p className="mt-5 max-w-[34ch] text-left text-sm font-semibold leading-relaxed text-mad-aaa-primary md:text-base">
+                    {slide.description}
+                  </p>
                 </div>
-                <div
-                  className="mt-5 h-px max-w-[4.5rem] shrink-0 bg-[color:var(--mad-border-gold-mid)]"
-                  aria-hidden
-                />
-                <p className="mt-5 min-h-[11.5rem] flex-1 text-sm font-semibold leading-relaxed text-mad-aaa-primary md:min-h-[12rem] md:text-base">
-                  {slide.description}
-                </p>
-              </div>
-            ))}
+              ))}
+            </div>
           </div>
         </aside>
       </div>

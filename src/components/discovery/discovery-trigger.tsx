@@ -35,7 +35,7 @@ export function DiscoveryTrigger({
         className
       )}
     >
-      {children ?? "Start discovery"}
+      {children ?? "Request callback"}
     </button>
   );
 }

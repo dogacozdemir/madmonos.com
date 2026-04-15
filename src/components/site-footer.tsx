@@ -24,33 +24,35 @@ export function SiteFooter() {
           </div>
           <nav className="flex flex-wrap items-center gap-x-10 gap-y-4 text-sm font-semibold">
             <Link
-              href="#projects"
+              href="/#projects"
               className="inline-flex min-h-12 items-center text-mad-highlight transition-colors hover:text-mad-gold"
             >
               Projects
             </Link>
             <Link
-              href="#impact"
+              href="/#impact"
               className="inline-flex min-h-12 items-center text-mad-highlight transition-colors hover:text-mad-gold"
             >
               Impact
             </Link>
             <Link
-              href="#services"
+              href="/#services"
               className="inline-flex min-h-12 items-center text-mad-highlight transition-colors hover:text-mad-gold"
             >
               Services
             </Link>
             <Link
-              href="#insights"
+              href="/#insights"
               className="inline-flex min-h-12 items-center text-mad-highlight transition-colors hover:text-mad-gold"
             >
               Insights
             </Link>
             <Link
-              href="#marquee"
-              className="inline-flex min-h-12 min-w-8 items-center justify-center text-mad-highlight transition-colors hover:text-mad-gold"
-            />
+              href="/#marquee"
+              className="inline-flex min-h-12 items-center text-mad-highlight transition-colors hover:text-mad-gold"
+            >
+              Runtime
+            </Link>
             <a
               href="mailto:hello@madmonos.com"
               className="inline-flex min-h-12 items-center text-mad-highlight transition-colors hover:text-mad-gold"

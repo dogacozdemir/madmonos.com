@@ -5,14 +5,6 @@ import Image from "next/image";
 import { cn } from "@/lib/utils";
 import { MORPHING_SERVICES } from "@/data/mad-genius-copy";
 
-const SRC_BY_ID: Record<(typeof MORPHING_SERVICES)[number]["id"], string> = {
-  "ai-creative": "/creative.webp",
-  "web-dev": "/developer.webp",
-  automation: "/agent.webp",
-  "seo-geo": "/performance.webp",
-  strategy: "/strategy.webp",
-};
-
 type ServicesCharacterStackProps = {
   className?: string;
 };
@@ -28,7 +20,8 @@ export const ServicesCharacterStack = forwardRef<
         "pointer-events-none flex select-none items-center justify-center",
         className
       )}
-      aria-hidden
+      role="img"
+      aria-label="Active service visual synced with service title and description"
     >
       <div
         className={cn(
@@ -46,8 +39,8 @@ export const ServicesCharacterStack = forwardRef<
               )}
             >
               <Image
-                src={SRC_BY_ID[item.id]}
-                alt=""
+                src={item.image}
+                alt={item.imageAlt}
                 fill
                 sizes="(max-width: 768px) min(40vw, 360px), (max-width: 1200px) min(78vw, 620px), min(620px, 38vw)"
                 className="object-contain object-center"
