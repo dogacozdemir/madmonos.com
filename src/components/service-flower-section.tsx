@@ -150,13 +150,14 @@ export function ServiceFlowerSection() {
               aria-hidden
             />
 
-            <Image
-              src="/madmonos.webp"
-              alt=""
-              width={579}
-              height={744}
-              className="relative z-[3] h-24 w-24 object-contain drop-shadow-[var(--mad-drop-image-deep)] md:h-32 md:w-32 gorilla-aura"
-            />
+        <Image
+          src="/logo-nav.webp"
+          alt=""
+          width={480}
+          height={612}
+          sizes="120px"
+          className="relative z-[3] h-24 w-24 object-contain drop-shadow-[var(--mad-drop-image-deep)] md:h-32 md:w-32 gorilla-aura"
+        />
             </div>
           </div>
         </div>

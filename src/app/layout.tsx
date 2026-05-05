@@ -5,7 +5,7 @@ import "./globals.css";
 import { Providers } from "@/components/providers/providers";
 import { AppShell } from "@/components/layout/app-shell";
 import { CRITICAL_INLINE_CSS } from "@/lib/critical-styles";
-import { SITE_DESCRIPTION, SITE_NAME, SITE_URL } from "@/lib/site";
+import { SITE_DESCRIPTION, SITE_NAME, SITE_OG_IMAGE, SITE_URL } from "@/lib/site";
 
 const SiteFooter = dynamic(() => import("@/components/site-footer").then((m) => m.SiteFooter), {
   ssr: true,
@@ -20,7 +20,7 @@ const SiteFooter = dynamic(() => import("@/components/site-footer").then((m) => 
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
-  subsets: ["latin"],
+  subsets: ["latin", "latin-ext"],
   display: "optional",
   adjustFontFallback: true,
   preload: false,
@@ -28,7 +28,7 @@ const geistSans = Geist({
 
 const geistMono = Geist_Mono({
   variable: "--font-geist-mono",
-  subsets: ["latin"],
+  subsets: ["latin", "latin-ext"],
   display: "optional",
   adjustFontFallback: true,
   preload: false,
@@ -36,7 +36,7 @@ const geistMono = Geist_Mono({
 
 const display = Oswald({
   variable: "--font-display",
-  subsets: ["latin"],
+  subsets: ["latin", "latin-ext"],
   weight: ["600", "700"],
   display: "optional",
   adjustFontFallback: true,
@@ -46,7 +46,7 @@ const display = Oswald({
 
 const montserrat = Montserrat({
   variable: "--font-montserrat",
-  subsets: ["latin"],
+  subsets: ["latin", "latin-ext"],
   /** Sadece hero “madmonos” başlığı (font-light). */
   weight: ["300"],
   display: "optional",
@@ -84,14 +84,13 @@ export const metadata: Metadata = {
     siteName: SITE_NAME,
     title: `${SITE_NAME} — AI-native agency for GTM speed`,
     description: SITE_DESCRIPTION,
-    // Dynamic OG image is served by src/app/opengraph-image.tsx (edge runtime).
-    // Route-level generateMetadata overrides this for blog posts and case studies.
+    images: [{ url: SITE_OG_IMAGE, width: 1200, height: 630, alt: `${SITE_NAME} — AI Marketing & MarTech` }],
   },
   twitter: {
     card: "summary_large_image",
     title: `${SITE_NAME} — AI Marketing & MarTech`,
     description: SITE_DESCRIPTION,
-    // twitter-image falls back to opengraph-image automatically.
+    images: [SITE_OG_IMAGE],
   },
   alternates: {
     canonical: SITE_URL,
@@ -99,6 +98,16 @@ export const metadata: Metadata = {
       en: SITE_URL,
       "en-US": SITE_URL,
     },
+  },
+  icons: {
+    icon: [
+      { url: "/favicon.ico", sizes: "any" },
+      { url: "/favicon-32.png", sizes: "32x32", type: "image/png" },
+      { url: "/favicon-48.png", sizes: "48x48", type: "image/png" },
+      { url: "/favicon-192.png", sizes: "192x192", type: "image/png" },
+    ],
+    apple: [{ url: "/apple-touch-icon.png", sizes: "180x180", type: "image/png" }],
+    shortcut: "/favicon-32.png",
   },
   robots: {
     index: true,
@@ -120,6 +129,14 @@ export default function RootLayout({
         <style
           id="mad-critical-inline-css"
           dangerouslySetInnerHTML={{ __html: CRITICAL_INLINE_CSS }}
+        />
+        <link
+          rel="preload"
+          href="/videos/cover5-hero-864.jpg"
+          as="image"
+          fetchPriority="high"
+          imageSrcSet="/videos/cover5-hero-864.jpg 864w"
+          imageSizes="100vw"
         />
       </head>
       <body className="min-h-full bg-mad-base font-sans text-mad-aaa-body">

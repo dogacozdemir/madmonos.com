@@ -53,12 +53,13 @@ export function SiteFooter() {
             >
               Runtime
             </Link>
-            <a
-              href="mailto:hello@madmonos.com"
-              className="inline-flex min-h-12 items-center text-mad-highlight transition-colors hover:text-mad-gold"
+            <DiscoveryTrigger
+              variant="ghost"
+              id="footer-book-demo-nav"
+              className="!inline-flex !min-h-12 !min-w-0 items-center !rounded-none !border-0 !bg-transparent !px-0 !py-0 !text-sm !font-semibold !normal-case !tracking-normal text-mad-highlight !shadow-none !backdrop-blur-none hover:!text-mad-gold"
             >
-              Contact
-            </a>
+              Book a demo
+            </DiscoveryTrigger>
           </nav>
         </div>
         <p className="mx-auto mt-5 max-w-6xl text-xs font-medium text-mad-highlight md:mt-6">

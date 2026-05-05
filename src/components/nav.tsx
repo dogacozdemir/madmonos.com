@@ -31,7 +31,7 @@ const navMenuItems: NavMenuItem[] = [
   { kind: "link", href: "/marfor", label: "MarFor", subLabel: "MARKETING FORCES" },
   { kind: "link", href: "/blog", label: "Blog", subLabel: "ARTICLES & UPDATES" },
   { kind: "link", href: "/#insights", label: "Insights", subLabel: "LATEST NEWS" },
-  { kind: "discovery", label: "Contact", subLabel: "OPEN DISCOVERY" },
+  { kind: "discovery", label: "Book a demo", subLabel: "OPEN DISCOVERY" },
 ];
 
 const tapHaptic =
@@ -225,7 +225,7 @@ export function Nav() {
                     "[transform:translate3d(0,0,0)]"
                   )}
                 >
-                  Contact
+                  Book a demo
                 </DiscoveryTrigger>
               </MagneticProximity>
 
@@ -241,7 +241,7 @@ export function Nav() {
                 )}
               >
                 <Phone size={14} aria-hidden />
-                <span className="sr-only">Contact</span>
+                <span className="sr-only">Book a demo</span>
               </DiscoveryTrigger>
 
               <button
@@ -345,7 +345,7 @@ export function Nav() {
                 <ul className="flex flex-col gap-0">
                   {navMenuItems.map((item) => (
                     <li
-                      key={item.kind === "link" ? item.href : "discovery-contact"}
+                      key={item.kind === "link" ? item.href : "discovery-book-demo"}
                       className="border-b border-white/10"
                     >
                       {item.kind === "link" ? (

@@ -98,6 +98,14 @@
   --mad-text-shadow-systems-primary: 0 0 48px rgba(201, 174, 85, 0.25), 0 2px 24px rgba(0, 0, 0, 0.45);
   --mad-filter-drop-systems: drop-shadow(0 0 15px rgba(201, 174, 85, 0.4));
   --mad-text-shadow-marquee-gold: 0 0 40px rgba(201, 174, 85, 0.25);
+  /* Mobile hero wordmark — dark halo + cool rim so type stays legible over logo + global vignette */
+  --mad-text-shadow-hero:
+    0 1px 0 rgba(6, 3, 8, 0.94),
+    0 2px 24px rgba(6, 3, 8, 0.88),
+    0 0 48px rgba(6, 3, 8, 0.55),
+    0 0 1px rgba(227, 208, 234, 0.35);
+  --mad-text-shadow-hero-tagline:
+    0 1px 0 rgba(6, 3, 8, 0.88), 0 2px 14px rgba(6, 3, 8, 0.72);
   --mad-shadow-cta-gold-pill: 0 8px 32px rgba(201, 174, 85, 0.25);
   --mad-shadow-insight-card: 0 18px 48px rgba(58, 29, 54, 0.08);
   --mad-text-shadow-service-headline: 0 0 20px rgba(227, 208, 234, 0.22), 0 0 40px rgba(58, 29, 54, 0.45),
@@ -170,6 +178,17 @@
   --mad-impact-terminal-muted: #5c4a2a;
 }
 
+/* Softer edge vignette on phones so fixed SiteVignette (z-25) steals less contrast from the hero stack */
+@media (max-width: 767px) {
+  :root {
+    --mad-vignette-edge: radial-gradient(
+      ellipse 88% 78% at 50% 45%,
+      transparent 0%,
+      rgba(26, 10, 22, 0.22) 100%
+    );
+  }
+}
+
 .mad-footer-cta-vignette {
   background: linear-gradient(
     to bottom,
@@ -210,6 +229,25 @@
 .mad-impact-scan-overlay {
   background-image: var(--mad-impact-scan-lines);
 }
+
+/* Mobile hero / sections — technical scan-line hum (subtle, composited opacity) */
+@keyframes mad-hero-scan-hum-breathe {
+  0%,
+  100% {
+    opacity: 0.055;
+  }
+  50% {
+    opacity: 0.095;
+  }
+}
+
+.mad-hero-scan-hum-layer {
+  background-image: var(--mad-impact-scan-lines);
+  mix-blend-mode: soft-light;
+  animation: mad-hero-scan-hum-breathe 3.6s ease-in-out infinite;
+  will-change: opacity;
+}
+
 .mad-impact-dual-wash-bg {
   background: var(--mad-impact-dual-wash);
 }
@@ -748,6 +786,11 @@ section.horizontal-scroll-section#services {
   .mad-video-shimmer {
     animation: none !important;
   }
+
+  .mad-hero-scan-hum-layer {
+    animation: none !important;
+    opacity: 0.06 !important;
+  }
 }
 
 /* ─── Panel texture (StickySolutions media shells) ─── */
@@ -851,6 +894,208 @@ section.horizontal-scroll-section#services {
   animation: mad-node-ring 2.8s ease-out infinite;
 }
 
+/* Conversion CTAs — halo on ::after, opacity-only animation (composited / main-thread friendly). */
+@keyframes mad-cta-gold-pulse-after {
+  0%,
+  100% {
+    opacity: 0;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+.mad-cta-gold-pulse {
+  position: relative;
+  isolation: isolate;
+}
+
+.mad-cta-gold-pulse::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  box-shadow: 0 0 26px rgba(201, 174, 85, 0.42);
+  opacity: 0;
+  animation: mad-cta-gold-pulse-after 2.65s ease-in-out infinite;
+  will-change: opacity;
+}
+
+/* Hero primary CTA — static base shadow on button; bloom layer animates opacity only. */
+@keyframes mad-cta-premium-glow-after {
+  0%,
+  100% {
+    opacity: 0;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+.mad-cta-premium-glow {
+  position: relative;
+  isolation: isolate;
+  box-shadow:
+    0 8px 32px rgba(201, 174, 85, 0.2),
+    0 0 0 1px rgba(201, 174, 85, 0.12),
+    inset 0 1px 0 rgba(255, 255, 255, 0.18);
+}
+
+.mad-cta-premium-glow::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  box-shadow:
+    0 4px 20px rgba(201, 174, 85, 0.22),
+    0 0 36px rgba(201, 174, 85, 0.16),
+    0 0 0 1px rgba(201, 174, 85, 0.14),
+    inset 0 1px 0 rgba(255, 255, 255, 0.08);
+  opacity: 0;
+  animation: mad-cta-premium-glow-after 3.85s ease-in-out infinite;
+  will-change: opacity;
+}
+
+/* FAB: do NOT set position — must keep Tailwind `fixed` for corner placement. */
+.mad-cta-gold-pulse--fab {
+  isolation: isolate;
+}
+
+@keyframes mad-cta-gold-pulse-fab-after {
+  0%,
+  100% {
+    opacity: 0;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+.mad-cta-gold-pulse--fab::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  box-shadow: 0 0 22px rgba(201, 174, 85, 0.38);
+  opacity: 0;
+  animation: mad-cta-gold-pulse-fab-after 2.65s ease-in-out infinite;
+  will-change: opacity;
+}
+
+@keyframes mad-price-glow {
+  0%,
+  100% {
+    text-shadow: 0 0 10px rgba(201, 174, 85, 0.2);
+    opacity: 0.9;
+  }
+  50% {
+    text-shadow:
+      0 0 18px rgba(201, 174, 85, 0.5),
+      0 0 32px rgba(201, 174, 85, 0.2);
+    opacity: 1;
+  }
+}
+
+.mad-price-glow {
+  animation: mad-price-glow 3.1s ease-in-out infinite;
+}
+
+/* Mobile packages — static rim + ::after luminance (opacity-only animation). */
+@keyframes mad-pkg-border-shimmer-after {
+  0%,
+  100% {
+    opacity: 0;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+.mad-pkg-card-shimmer {
+  position: relative;
+  isolation: isolate;
+  box-shadow:
+    0 0 0 1px rgba(201, 174, 85, 0.35),
+    0 0 20px rgba(201, 174, 85, 0.12),
+    inset 0 0 28px rgba(201, 174, 85, 0.05);
+}
+
+.mad-pkg-card-shimmer::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  box-shadow:
+    0 0 0 1px rgba(230, 204, 130, 0.72),
+    0 0 36px rgba(201, 174, 85, 0.28),
+    inset 0 0 40px rgba(201, 174, 85, 0.1);
+  opacity: 0;
+  animation: mad-pkg-border-shimmer-after 2.6s ease-in-out infinite;
+  will-change: opacity;
+}
+
+/* Carousel pagination — ≥44×44px hit target (WCAG 2.5.5); visual pill is nested */
+.mad-carousel-dot-hit {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  min-width: 44px;
+  min-height: 44px;
+  padding: 0;
+  margin: 0;
+  border: none;
+  background: transparent;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.mad-carousel-dot-hit__pill {
+  display: block;
+  height: 6px;
+  border-radius: 9999px;
+  transition:
+    width 0.3s ease,
+    background-color 0.3s ease;
+}
+
+@keyframes mad-pkg-particles-drift {
+  0% {
+    transform: translate3d(0, 0, 0);
+  }
+  100% {
+    transform: translate3d(-56px, -32px, 0);
+  }
+}
+
+.mad-pkg-particle-field {
+  pointer-events: none;
+  background-image:
+    radial-gradient(circle at 22% 32%, rgba(201, 174, 85, 0.16) 0.45px, transparent 1.15px),
+    radial-gradient(circle at 78% 68%, rgba(156, 112, 178, 0.14) 0.45px, transparent 1.15px);
+  background-size: 52px 52px, 68px 68px;
+  animation: mad-pkg-particles-drift 20s linear infinite;
+  will-change: transform;
+}
+
+.mad-pkg-particle-field--fast {
+  animation-duration: 4.2s;
+  animation-timing-function: linear;
+}
+
+/* Touch ripple — expanded via JS scale; GPU-friendly */
+.mad-cta-gold-ripple {
+  width: 44px;
+  height: 44px;
+  box-sizing: border-box;
+  border-radius: 9999px;
+  border: 2px solid rgba(201, 174, 85, 0.52);
+  will-change: transform, opacity;
+}
+
 /* CTA — Digital Present-style inversion on hover/focus (GPU-safe) */
 .cta-digital-present {
   transition:
@@ -872,6 +1117,26 @@ section.horizontal-scroll-section#services {
   .cta-digital-present:focus-visible {
     mix-blend-mode: normal;
     transition: none;
+  }
+
+  .mad-cta-gold-pulse,
+  .mad-cta-gold-pulse--fab,
+  .mad-cta-premium-glow,
+  .mad-price-glow {
+    animation: none !important;
+  }
+
+  .mad-cta-gold-pulse::after,
+  .mad-cta-gold-pulse--fab::after,
+  .mad-cta-premium-glow::after,
+  .mad-pkg-card-shimmer::after {
+    animation: none !important;
+    opacity: 0 !important;
+  }
+
+  .mad-pkg-card-shimmer,
+  .mad-pkg-particle-field {
+    animation: none !important;
   }
 }
 

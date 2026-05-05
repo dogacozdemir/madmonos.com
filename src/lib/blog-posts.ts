@@ -1,5 +1,5 @@
 import { cache } from "react";
-import { SITE_URL } from "@/lib/site";
+import { SITE_LOGO_URL, SITE_URL } from "@/lib/site";
 
 const BLOG_SHEET_ID = "13voX8UVu55bYIK8jpHHk_EfoVpto4e5niKpWUkliiHM";
 const DEFAULT_SHEET_GID = "0";
@@ -83,7 +83,7 @@ const slugify = (value: string) =>
     .replace(/[^a-z0-9]+/g, "-")
     .replace(/^-+|-+$/g, "");
 
-const FALLBACK_COVER_IMAGE = "/madmonos.webp";
+const FALLBACK_COVER_IMAGE = "/logo-nav.webp";
 
 function parseEntities(raw: string): string[] {
   const trimmed = raw.trim();
@@ -345,7 +345,7 @@ export function buildBlogPostingJsonLd(post: BlogPost): BlogPostingJsonLd {
       "@type": "Organization",
       name: "madmonos",
       url: SITE_URL,
-      logo: { "@type": "ImageObject", url: `${SITE_URL}/madmonos.webp` },
+      logo: { "@type": "ImageObject", url: SITE_LOGO_URL },
     },
     ...(post.entities.length > 0 ? { keywords: post.entities.join(", ") } : {}),
   };

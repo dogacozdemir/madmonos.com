@@ -391,7 +391,7 @@ export function HeroMaskedDigitalPresent() {
                 "[filter:drop-shadow(0_0_8px_rgba(10,6,12,0.32))]"
               )}
             >
-              Adapting brands to the AI era. Period.
+              Adapting brands to the AI era.
             </p>
           </div>
         </div>
@@ -421,7 +421,6 @@ export function HeroMaskedDigitalPresent() {
                 "font-sans text-[clamp(1.05rem,2.1vw,1.5rem)] font-semibold leading-snug tracking-[-0.02em] text-mad-aaa-primary [text-shadow:0_2px_24px_rgba(0,0,0,0.65)]"
               )}
             >
-              End-to-end marketing solutions, accelerated by AI
             </p>
             <div
               className={cn(

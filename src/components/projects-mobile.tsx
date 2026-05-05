@@ -1,85 +1,135 @@
 "use client";
 
 import Image from "next/image";
-import { DIGITAL_PRESENT_PROJECTS } from "@/data/digital-present-projects";
+import { cn } from "@/lib/utils";
+import {
+  WHAT_WE_DO_SECTION_COPY,
+  WHAT_WE_DO_TRINITY_SERVICES,
+} from "@/data/mad-genius-copy";
+import { useDiscovery } from "@/components/discovery/discovery-context";
+import { useWhatWeDoScrollReveal } from "@/hooks/use-what-we-do-scroll-reveal";
 
-const IMG_SIZES = "(max-width: 768px) 92vw, 50vw";
+function PillarCardGlyph({ kind }: { kind: "ai" | "marfor" | "growth" }) {
+  const c = "text-mad-aaa-gold/90";
+  if (kind === "ai") {
+    return (
+      <svg className={cn("h-4 w-4 shrink-0", c)} viewBox="0 0 24 24" fill="none" aria-hidden>
+        <path
+          d="M12 3v3M12 18v3M3 12h3M18 12h3M6.3 6.3l2.1 2.1M15.6 15.6l2.1 2.1M6.3 17.7l2.1-2.1M15.6 8.4l2.1-2.1"
+          stroke="currentColor"
+          strokeWidth="1.5"
+          strokeLinecap="round"
+        />
+        <circle cx="12" cy="12" r="3" stroke="currentColor" strokeWidth="1.5" />
+      </svg>
+    );
+  }
+  if (kind === "marfor") {
+    return (
+      <svg className={cn("h-4 w-4 shrink-0", c)} viewBox="0 0 24 24" fill="none" aria-hidden>
+        <path
+          d="M12 4v4M8 8h8M7 14h10M6 20h12"
+          stroke="currentColor"
+          strokeWidth="1.5"
+          strokeLinecap="round"
+        />
+        <circle cx="12" cy="8" r="2" stroke="currentColor" strokeWidth="1.5" />
+      </svg>
+    );
+  }
+  return (
+    <svg className={cn("h-4 w-4 shrink-0", c)} viewBox="0 0 24 24" fill="none" aria-hidden>
+      <path
+        d="M4 16l4-6 4 3 4-7 4 10"
+        stroke="currentColor"
+        strokeWidth="1.5"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+      <path d="M4 20h16" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+    </svg>
+  );
+}
+
+function kindFor(id: string): "ai" | "marfor" | "growth" {
+  if (id === "ai-creative") return "ai";
+  if (id === "marfor-strategy") return "marfor";
+  return "growth";
+}
 
 /**
- * Mobile-native project showcase — full-bleed editorial cards.
- * Portrait-crop image fills the card; all text overlays the gradient inside.
- * Ghost project number anchors each card typographically (brand identity preserved).
- * No horizontal scroll, no flip, no arrow navigation.
+ * Hero ↔ Team (`#projects`) — mobil What we do.
  */
 export function ProjectsMobile() {
+  const pillars = WHAT_WE_DO_TRINITY_SERVICES;
+  const copy = WHAT_WE_DO_SECTION_COPY;
+  const { open, isOpen } = useDiscovery();
+  const sectionRef = useWhatWeDoScrollReveal();
+
   return (
     <section
+      ref={sectionRef}
       id="projects"
-      className="relative z-[30] border-y border-[color:var(--mad-border-accent-faint)] bg-mad-base py-10"
-      aria-label="Selected work"
+      className="relative z-10 border-b border-[color:var(--mad-border-accent-faint)] bg-mad-base pb-16 pt-20 md:border-y md:pb-20 md:pt-24"
+      aria-label="What we do"
     >
-      <div className="px-6 pb-7">
-        <p className="font-mono text-[10px] font-semibold uppercase tracking-[0.28em] text-mad-aaa-gold">
-          Selected work
-        </p>
-        <h2 className="mt-2 font-[family-name:var(--font-display)] text-[clamp(1.5rem,8vw,2.5rem)] font-bold uppercase leading-[1.06] tracking-[-0.03em] text-mad-highlight">
-          Selected work
+      <div className="relative z-20 px-6" data-wd-reveal="header">
+        <h2 className="flex flex-col items-center gap-3 pb-20 pt-14 text-center font-[family-name:var(--font-display)] text-[clamp(1.5rem,8vw,2.35rem)] font-bold leading-[1.12] tracking-[-0.03em] md:gap-4 md:pb-24 md:pt-16">
+          <span className="text-balance text-mad-aaa-gold">{copy.headlineAccent}</span>
+          <span className="text-balance text-mad-highlight">{copy.headlineRest}</span>
         </h2>
       </div>
 
-      <div className="flex flex-col gap-4 px-4">
-        {DIGITAL_PRESENT_PROJECTS.map((slide) => (
+      <div className="relative z-10 mt-10 flex flex-col gap-6 px-6 md:mt-14">
+        {pillars.map((item) => (
           <article
-            key={slide.id}
-            className="group relative overflow-hidden rounded-2xl border border-[color:var(--mad-border-gold-dim)] shadow-[var(--mad-shadow-elevated)] [transform:translate3d(0,0,0)]"
-            aria-label={`${slide.clientCode}: ${slide.title}`}
+            key={item.id}
+            data-wd-reveal="card"
+            itemScope
+            itemType="https://schema.org/Service"
+            className="flex flex-col overflow-hidden rounded-2xl border border-[color:var(--mad-border-accent-faint)] bg-mad-void/35 pt-4 shadow-[var(--mad-shadow-chip)] backdrop-blur-xl md:pt-5"
           >
-            {/* Portrait-crop image — fills the entire card */}
-            <div className="relative aspect-[4/5] w-full overflow-hidden">
+            <meta itemProp="name" content={item.title} />
+            <meta itemProp="description" content={item.description} />
+            <meta itemProp="image" content={item.image} />
+
+            <div className="relative aspect-[10/9] w-full overflow-hidden border-b border-[color:var(--mad-border-accent-faint)] bg-mad-deep/50">
               <Image
-                src={slide.image}
-                alt={slide.imageAlt}
-                width={slide.width}
-                height={slide.height}
-                sizes={IMG_SIZES}
-                quality={75}
-                className="absolute inset-0 h-full w-full object-cover object-center"
+                src={item.image}
+                alt={item.imageAlt}
+                fill
+                className="object-cover object-center"
+                sizes="92vw"
                 draggable={false}
               />
-
-              {/* Ghost project number — large typographic anchor, brand identity */}
-              <span
-                className="pointer-events-none absolute left-3 top-2 select-none font-[family-name:var(--font-display)] text-[7rem] font-black leading-none tracking-[-0.06em] text-white/[0.06]"
-                aria-hidden
-              >
-                {slide.id}
-              </span>
-
-              {/* Technical badge */}
-              {slide.technicalBadge ? (
-                <div className="absolute right-3 top-3 rounded-full border border-[color:var(--mad-border-gold-strong)] bg-mad-deep/90 px-2.5 py-1 text-[9px] font-bold uppercase tracking-wider text-mad-aaa-gold backdrop-blur-md">
-                  {slide.technicalBadge}
-                </div>
-              ) : null}
-
-              {/* Rich bottom gradient — text lives here, not below the image */}
               <div
-                className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/95 via-black/55 to-transparent px-4 pb-5 pt-20"
-                aria-hidden={false}
-              >
-                <p className="font-mono text-[9px] font-bold uppercase tracking-[0.22em] text-mad-aaa-gold/80">
-                  {slide.clientCode}
-                  {slide.year ? (
-                    <span className="ml-2 text-white/40">· {slide.year}</span>
-                  ) : null}
-                </p>
-                <h3 className="mt-1.5 font-[family-name:var(--font-display)] text-[clamp(1.15rem,5.8vw,1.5rem)] font-bold uppercase leading-[1.05] tracking-[-0.025em] text-white">
-                  {slide.title}
+                className="pointer-events-none absolute inset-0 bg-gradient-to-t from-[color:var(--mad-base)]/90 via-transparent to-transparent"
+                aria-hidden
+              />
+            </div>
+
+            <div className="flex flex-col p-5">
+              <div className="flex items-center gap-2">
+                <PillarCardGlyph kind={kindFor(item.id)} />
+                <h3 className="font-[family-name:var(--font-display)] text-base font-bold uppercase leading-tight tracking-[-0.02em] text-mad-highlight">
+                  {item.title}
                 </h3>
-                <p className="mt-1.5 max-w-[42ch] text-[11px] font-normal leading-snug text-white/55">
-                  {slide.description}
-                </p>
               </div>
+              <p className="mt-3 text-sm leading-relaxed text-mad-aaa-body">{item.description}</p>
+              <button
+                type="button"
+                data-mad-cursor="discover"
+                aria-haspopup="dialog"
+                aria-expanded={isOpen}
+                aria-controls="discovery-modal"
+                onClick={open}
+                className="group mt-5 inline-flex w-fit items-center gap-2 text-left text-[10px] font-bold uppercase tracking-[0.2em] text-mad-aaa-gold"
+              >
+                Learn more
+                <span className="inline-block" aria-hidden>
+                  ↗
+                </span>
+              </button>
             </div>
           </article>
         ))}

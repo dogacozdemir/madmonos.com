@@ -5,6 +5,7 @@ import { useEffect, useLayoutEffect, useRef } from "react";
 import { cn } from "@/lib/utils";
 import { TEAM_MEMBERS } from "@/data/team-spotlight";
 import { scheduleScrollTriggerRefresh } from "@/lib/schedule-st-refresh";
+import { trDisplayUpper } from "@/lib/tr-display";
 import { useTeamSpotlightNav } from "@/components/providers/team-spotlight-nav-context";
 
 /**
@@ -21,17 +22,6 @@ function dwellWeight(i: number, floatIndex: number, plateau = 0.34) {
   return Math.max(0, (1 - falloff) ** 2.6);
 }
 
-function splitDisplayName(fullName: string): { line1: string; line2: string } {
-  const upperName = fullName.toLocaleUpperCase("tr-TR");
-  const parts = upperName.trim().split(/\s+/).filter(Boolean);
-  if (parts.length <= 1) {
-    return { line1: upperName, line2: "" };
-  }
-  const line2 = parts.pop() ?? "";
-  const line1 = parts.join(" ");
-  return { line1, line2 };
-}
-
 export function SpotlightTeamStage() {
   const sectionRef = useRef<HTMLElement>(null);
   const pinRef = useRef<HTMLDivElement>(null);
@@ -44,6 +34,8 @@ export function SpotlightTeamStage() {
   const centersRef = useRef<number[]>([]);
   const textBlockRefs = useRef<(HTMLDivElement | null)[]>([]);
   const dustTurbulenceRef = useRef<SVGFETurbulenceElement>(null);
+  /** Masaüstü 5 kolon grid — ışın yedek merkezleri (figure 0 px ise). */
+  const desktopPortraitGridRef = useRef<HTMLDivElement>(null);
 
   const { setTeamSpotlightActive } = useTeamSpotlightNav();
   const n = TEAM_MEMBERS.length;
@@ -58,25 +50,44 @@ export function SpotlightTeamStage() {
     const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     const mobileLayout = window.matchMedia("(max-width: 1023px)").matches;
     const mobileMql = window.matchMedia("(max-width: 1023px)");
-    const narrowMql = window.matchMedia("(max-width: 480px)");
     let mobileLayoutActive = mobileMql.matches;
-    let narrowLayoutActive = narrowMql.matches;
 
     let reducedIO: IntersectionObserver | null = null;
     let cancelled = false;
     let ctx: { revert: () => void } | undefined;
 
-    /** Portrait X-center relative to pin center (px) — no GSAP needed. */
+    /**
+     * Işın X ofseti: grid geometrisi (padding, column-gap, eşit kolonlar).
+     */
     const updateCenters = () => {
       const pr = pin.getBoundingClientRect();
       const pinCX = pr.left + pr.width / 2;
+      const gridEl = desktopPortraitGridRef.current;
+      if (gridEl) {
+        const gr = gridEl.getBoundingClientRect();
+        const cs = window.getComputedStyle(gridEl);
+        const padL = parseFloat(cs.paddingLeft) || 0;
+        const padR = parseFloat(cs.paddingRight) || 0;
+        const colGap =
+          parseFloat(cs.columnGap) || parseFloat(cs.gap) || 0;
+        const innerW = gridEl.clientWidth - padL - padR;
+        if (innerW >= 8 && gr.width >= 8) {
+          const gutterTotal = colGap * Math.max(0, n - 1);
+          const trackW = Math.max(0, (innerW - gutterTotal) / n);
+          const contentLeft = gr.left + padL;
+          centersRef.current = TEAM_MEMBERS.map((_, i) => {
+            const cx = contentLeft + i * (trackW + colGap) + trackW / 2;
+            return cx - pinCX;
+          });
+          return;
+        }
+      }
       centersRef.current = TEAM_MEMBERS.map((_, i) => {
         const fig = memberRefs.current[i];
         if (!fig) return 0;
-        const img = fig.querySelector("img");
-        const r = (img ?? fig).getBoundingClientRect();
-        const imgCX = r.left + r.width / 2;
-        return imgCX - pinCX;
+        const r = fig.getBoundingClientRect();
+        if (r.width < 0.5) return 0;
+        return r.left + r.width / 2 - pinCX;
       });
     };
 
@@ -103,19 +114,19 @@ export function SpotlightTeamStage() {
         const applyMemberAndText = (progress: number) => {
           const floatIndex = progress * (n - 1);
           const mobile = mobileLayoutActive;
-          const narrow = narrowLayoutActive;
 
+          /** Işık/renk vurgusu (grayscale, opacity, parlaklık); büyüme/öne çıkma yok. */
           const styleFigure = (el: HTMLElement | null, i: number) => {
             if (!el) return;
             const w = dwellWeight(i, floatIndex);
             const gray = 1 - w;
             const op = 0.1 + 0.9 * w;
-            const sc = 1 + (narrow || mobile ? 0.11 : 0.18) * w;
             const br = 1 + 0.2 * w;
             gsap.set(el, {
               filter: `grayscale(${gray}) brightness(${br})`,
               opacity: op,
-              scale: sc,
+              scale: 1,
+              y: 0,
               transformOrigin: "50% 98%",
               force3D: true,
             });
@@ -129,16 +140,17 @@ export function SpotlightTeamStage() {
             mobileMemberRefs.current.forEach((el, i) => styleFigure(el, i));
             memberRefs.current.forEach((el) => {
               if (!el) return;
-              gsap.set(el, { clearProps: "opacity,filter,scale" });
+              gsap.set(el, { clearProps: "opacity,filter,scale,transform" });
             });
           } else {
             if (track) gsap.set(track, { xPercent: 0, x: 0 });
+            /** Statik grid merkezleri; sonra renk vurgusu, sonra ışın. */
             updateCenters();
-            gsap.set(beamMove, { x: spotlightX(progress) });
             memberRefs.current.forEach((el, i) => styleFigure(el, i));
+            gsap.set(beamMove, { x: spotlightX(progress) });
             mobileMemberRefs.current.forEach((el) => {
               if (!el) return;
-              gsap.set(el, { clearProps: "opacity,filter,scale" });
+              gsap.set(el, { clearProps: "opacity,filter,scale,transform" });
             });
           }
 
@@ -168,6 +180,7 @@ export function SpotlightTeamStage() {
               opacity: 0.1,
               filter: "grayscale(1) brightness(1)",
               scale: 1,
+              y: 0,
               transformOrigin: "50% 98%",
               force3D: true,
             });
@@ -179,6 +192,7 @@ export function SpotlightTeamStage() {
               opacity: 0.1,
               filter: "grayscale(1) brightness(1)",
               scale: 1,
+              y: 0,
               transformOrigin: "50% 98%",
               force3D: true,
             });
@@ -200,23 +214,26 @@ export function SpotlightTeamStage() {
                 gsap.set(el, {
                   filter: on ? "grayscale(0) brightness(1.2)" : "grayscale(1) brightness(1)",
                   opacity: on ? 1 : 0.1,
-                  scale: on ? 1.18 : 1,
+                  scale: 1,
+                  y: 0,
                   transformOrigin: "50% 98%",
                 });
               });
             } else {
-              updateCenters();
-              gsap.set(beamMove, { x: spotlightX(0) });
               memberRefs.current.forEach((el, i) => {
                 if (!el) return;
                 const on = i === 0;
                 gsap.set(el, {
                   filter: on ? "grayscale(0) brightness(1.2)" : "grayscale(1) brightness(1)",
                   opacity: on ? 1 : 0.1,
-                  scale: on ? 1.18 : 1,
+                  scale: 1,
+                  y: 0,
                   transformOrigin: "50% 98%",
+                  force3D: true,
                 });
               });
+              updateCenters();
+              gsap.set(beamMove, { x: spotlightX(0) });
             }
             textBlockRefs.current.forEach((el, i) => {
               if (!el) return;
@@ -227,31 +244,40 @@ export function SpotlightTeamStage() {
             return;
           }
 
-          gsap.timeline({
-            scrollTrigger: {
-              trigger: section,
-              start: "top top",
-              end: "bottom bottom",
-              pin,
-              pinSpacing: true,
-              scrub: 1.15,
-              snap: mobileLayout
-                ? undefined
-                : {
-                    snapTo: Array.from({ length: n }, (_, i) => i / Math.max(1, n - 1)),
-                    duration: { min: 0.28, max: 0.62 },
-                    delay: 0.04,
-                    ease: "power3.inOut",
-                  },
-              invalidateOnRefresh: true,
-              refreshPriority: -2,
-              anticipatePin: 0,
-              onUpdate: (self) => applyMemberAndText(self.progress),
-              onRefresh: (self) => { applyMemberAndText(self.progress); },
-              onEnter: () => setTeamSpotlightActive(true),
-              onLeave: () => setTeamSpotlightActive(false),
-              onEnterBack: () => setTeamSpotlightActive(true),
-              onLeaveBack: () => setTeamSpotlightActive(false),
+          /**
+           * scrub:number → gecikmeli progress; Lenis + ters scroll’da tween geride kalıp floatIndex
+           * “takılı” kalabiliyordu. snap scroll’u animasyonla çekince Doğaç sonrası geri dönüşte
+           * self.progress Hürrem/Ensar’a düzgün eşlenmiyordu.
+           * scrub:true = kaydırma ile progress birebir; masaüstünde snap yok (tekrar eklenebilir).
+           */
+          ScrollTrigger.create({
+            trigger: section,
+            start: "top top",
+            end: "bottom bottom",
+            pin,
+            pinSpacing: true,
+            scrub: true,
+            invalidateOnRefresh: true,
+            refreshPriority: -2,
+            anticipatePin: 0,
+            onUpdate: (self) => {
+              applyMemberAndText(self.progress);
+            },
+            onRefresh: (self) => {
+              applyMemberAndText(self.progress);
+            },
+            onEnter: (self) => {
+              setTeamSpotlightActive(true);
+              applyMemberAndText(self.progress);
+            },
+            onLeave: () => setTeamSpotlightActive(false),
+            onEnterBack: (self) => {
+              setTeamSpotlightActive(true);
+              applyMemberAndText(self.progress);
+            },
+            onLeaveBack: (self) => {
+              setTeamSpotlightActive(false);
+              applyMemberAndText(self.progress);
             },
           });
 
@@ -274,17 +300,14 @@ export function SpotlightTeamStage() {
 
     const onLayoutMediaChange = () => {
       mobileLayoutActive = mobileMql.matches;
-      narrowLayoutActive = narrowMql.matches;
       scheduleScrollTriggerRefresh();
     };
     mobileMql.addEventListener("change", onLayoutMediaChange);
-    narrowMql.addEventListener("change", onLayoutMediaChange);
 
     return () => {
       cancelled = true;
       cancelAnimationFrame(raf);
       mobileMql.removeEventListener("change", onLayoutMediaChange);
-      narrowMql.removeEventListener("change", onLayoutMediaChange);
       setTeamSpotlightActive(false);
       ctx?.revert();
       reducedIO?.disconnect();
@@ -378,7 +401,7 @@ export function SpotlightTeamStage() {
       <div
         ref={pinRef}
         className={cn(
-          "relative flex h-screen min-h-[100svh] w-full flex-col overflow-hidden",
+          "relative flex h-screen min-h-[100svh] w-full flex-col overflow-x-clip overflow-y-visible",
           "bg-mad-void"
         )}
       >
@@ -417,8 +440,8 @@ export function SpotlightTeamStage() {
           className={cn(
             "pointer-events-none absolute left-1/2 z-20 w-[min(calc(100%-1.5rem),80rem)] max-w-[calc(100vw-2rem)] -translate-x-1/2 text-center",
             "top-[clamp(5.5rem,11svh,7.75rem)]",
-            "font-[family-name:var(--font-display)] text-sm font-bold uppercase leading-[1.05] tracking-[0.32em] text-mad-highlight",
-            "sm:text-base sm:tracking-[0.36em] md:text-lg md:tracking-[0.4em] lg:top-[7.5rem] lg:text-xl",
+            "font-[family-name:var(--font-display)] text-base font-bold uppercase leading-[1.05] tracking-[0.32em] text-mad-highlight",
+            "sm:text-lg sm:tracking-[0.36em] md:text-xl md:tracking-[0.38em] lg:top-[7.5rem] lg:text-2xl lg:tracking-[0.4em]",
             "[text-shadow:var(--mad-text-shadow-spot-kicker)]"
           )}
         >
@@ -457,20 +480,20 @@ export function SpotlightTeamStage() {
           aria-hidden
         />
 
-        <div className="relative z-[8] flex min-h-0 flex-1 flex-col overflow-hidden pt-[clamp(8.5rem,18svh,10.5rem)] md:pt-[9.75rem] lg:pt-[10rem]">
+        <div className="relative z-[8] flex min-h-0 flex-1 flex-col overflow-x-clip overflow-y-visible pt-[clamp(8.5rem,18svh,10.5rem)] md:pt-[9.75rem] lg:pt-[10rem]">
           <div
             ref={stageRef}
             className={cn(
               "relative mx-auto flex min-h-0 w-full max-w-[min(100%,1600px)] flex-1 flex-col overflow-x-clip",
-              "max-h-[min(70svh,840px)] pl-[max(0.75rem,env(safe-area-inset-left))] pr-[max(0.75rem,env(safe-area-inset-right))] sm:pl-4 sm:pr-4 md:max-h-[min(72svh,920px)] md:px-8 lg:max-w-[min(97vw,2040px)] lg:px-8 xl:px-10 2xl:max-w-[min(96vw,2240px)]"
+              "max-h-[min(76svh,940px)] pl-[max(0.75rem,env(safe-area-inset-left))] pr-[max(0.75rem,env(safe-area-inset-right))] sm:pl-4 sm:pr-4 md:max-h-[min(78svh,1020px)] md:px-8 lg:max-w-[min(97vw,2040px)] lg:px-8 xl:px-10 2xl:max-w-[min(96vw,2240px)]"
             )}
             style={{ perspective: "1400px" }}
           >
             {/* Mobil: tek görünüm, scroll ile şerit sağdan sola; lg+: üye sayısı kadar kolon */}
             <div
               className={cn(
-                "relative min-h-0 w-full min-w-0 max-w-full flex-1 overflow-hidden",
-                "max-h-[min(52svh,560px)] sm:max-h-[min(55svh,620px)] md:max-h-[min(58svh,660px)] lg:max-h-[min(60svh,720px)] xl:max-h-[min(62svh,760px)] 2xl:max-h-[min(64svh,820px)]",
+                "relative min-h-0 w-full max-w-full min-w-0 flex-1 overflow-hidden lg:overflow-visible",
+                "max-h-[min(58svh,640px)] sm:max-h-[min(60svh,690px)] md:max-h-[min(63svh,740px)] lg:max-h-[min(66svh,800px)] xl:max-h-[min(68svh,840px)] 2xl:max-h-[min(70svh,910px)]",
                 "pt-3 sm:pt-4 md:pt-5 lg:pt-6"
               )}
               style={{
@@ -503,8 +526,8 @@ export function SpotlightTeamStage() {
                       alt={`${member.name}, ${member.title} — Madmonos team portrait`}
                       width={400}
                       height={400}
-                      className="h-auto max-h-full w-full max-w-[min(100%,420px)] object-contain object-bottom"
-                      sizes="(max-width: 768px) min(40vw, 360px), 90vw"
+                      className="h-auto max-h-full w-full max-w-[min(100%,448px)] object-contain object-bottom"
+                      sizes="(max-width: 768px) min(42vw, 380px), 90vw"
                       priority={i < 2}
                     />
                     <figcaption className="sr-only">
@@ -514,6 +537,7 @@ export function SpotlightTeamStage() {
                 ))}
               </div>
               <div
+                ref={desktopPortraitGridRef}
                 className={cn(
                   "relative hidden min-h-0 w-full min-w-0 max-w-full flex-1 lg:grid lg:items-end lg:justify-items-center",
                   "gap-[0.35rem] px-1 sm:gap-1.5 sm:px-2 md:gap-3 md:px-3 lg:gap-3 lg:px-2 xl:gap-4 2xl:gap-5"
@@ -528,8 +552,7 @@ export function SpotlightTeamStage() {
                     }}
                     className={cn(
                       "member-png relative flex h-full min-h-0 w-full min-w-0 max-w-full flex-col items-end justify-end justify-self-stretch will-change-[transform,filter,opacity]",
-                      `member-png-${i}`,
-                      i === 0 ? "" : "opacity-[0.1] [filter:grayscale(1)]"
+                      `member-png-${i}`
                     )}
                   >
                     <Image
@@ -538,7 +561,7 @@ export function SpotlightTeamStage() {
                       width={400}
                       height={400}
                       className="h-auto max-h-full w-full max-w-full object-contain object-bottom"
-                      sizes="(max-width: 768px) min(40vw, 400px), (max-width: 1024px) 46vw, min(580px, 36vw)"
+                      sizes="(max-width: 768px) min(44vw, 440px), (max-width: 1024px) 50vw, min(700px, 42vw)"
                       priority={i < 2}
                     />
                     <figcaption className="sr-only">
@@ -553,12 +576,17 @@ export function SpotlightTeamStage() {
           {/* Editorial grid — legs clear, dense type, max-w-7xl */}
           <div
             className={cn(
-              "relative z-10 -mt-2 w-full max-w-[min(100%,92rem)] shrink-0 px-[max(1rem,env(safe-area-inset-left))] pb-[max(1rem,env(safe-area-inset-bottom))] pr-[max(1rem,env(safe-area-inset-right))] pt-1 sm:-mt-3 sm:pt-1 md:mx-auto md:px-12 md:pb-10 md:pt-2 2xl:px-16"
+              "relative z-10 w-full max-w-[min(100%,92rem)] shrink-0 px-[max(1rem,env(safe-area-inset-left))] pb-[max(0.75rem,env(safe-area-inset-bottom))] pr-[max(1rem,env(safe-area-inset-right))] pt-0 md:mx-auto md:px-12 md:pb-8 2xl:px-16"
             )}
           >
-            <div className="relative mx-auto min-h-[12.5rem] w-full max-w-7xl overflow-x-clip border-t border-[color:var(--mad-border-highlight-soft)] sm:min-h-[13rem] md:min-h-[11.5rem] 2xl:max-w-[min(80rem,94vw)]">
+            <div
+              className={cn(
+                "relative mx-auto min-h-[10.5rem] w-full max-w-[min(100%,76rem)] overflow-x-clip border-t border-[color:var(--mad-border-highlight-soft)] px-6 sm:min-h-[11rem] sm:px-8 md:min-h-[9.75rem] md:px-12 lg:px-14 2xl:max-w-[min(96vw,90rem)]",
+                "-translate-y-[clamp(6.5rem,14svh,11rem)] pt-[clamp(3.25rem,7svh,5.25rem)] will-change-transform"
+              )}
+            >
               {TEAM_MEMBERS.map((member, i) => {
-                const { line1, line2 } = splitDisplayName(member.name);
+                const nameUpper = trDisplayUpper(member.name);
                 return (
                   <div
                     key={member.id}
@@ -566,36 +594,28 @@ export function SpotlightTeamStage() {
                       textBlockRefs.current[i] = el;
                     }}
                     className={cn(
-                      "member-data pointer-events-none absolute inset-x-0 top-0 grid grid-cols-1 content-start gap-3 py-3 will-change-transform sm:gap-4 sm:py-4 md:grid-cols-[minmax(0,1fr)_minmax(0,1.05fr)] md:items-start md:gap-x-16 md:gap-y-2 md:py-5 lg:gap-x-20",
+                      "member-data pointer-events-none absolute inset-x-0 top-0 flex flex-col items-center gap-2 px-5 py-2 text-center will-change-transform sm:gap-2.5 sm:px-6 sm:py-2.5 md:gap-3 md:px-8 md:py-3 lg:px-10",
                       `member-data-${i}`
                     )}
                     aria-hidden={i !== 0}
-                    style={{ transform: `translateX(${i === 0 ? 0 : 100}%)` }}
                   >
-                    <div className="name-column min-w-0 -mt-2 md:-mt-5">
+                    <div className="flex w-full max-w-full justify-center overflow-x-auto [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
                       <h3
                         className={cn(
-                          "font-[family-name:var(--font-display)] font-bold uppercase leading-[0.88] tracking-[-0.035em] text-mad-highlight",
-                          "text-[clamp(3rem,5vw,6rem)] md:text-[clamp(3rem,4.5vw,5.75rem)]",
+                          "inline-block max-w-none shrink-0 whitespace-nowrap px-2 font-[family-name:var(--font-display)] font-bold leading-[0.92] tracking-[-0.02em] text-mad-highlight",
+                          "text-[clamp(2.05rem,min(9vw),4.85rem)] md:text-[clamp(2.35rem,min(8vw),4.95rem)]",
                           "[text-shadow:var(--mad-text-shadow-member-name)]"
                         )}
                       >
-                        <span className="block">{line1}</span>
-                        {line2 ? (
-                          <span className="mt-1 block text-[clamp(1.5rem,calc(2.8vw_+_0.5rem),3.25rem)] tracking-[-0.03em] text-mad-highlight">
-                            {line2}
-                          </span>
-                        ) : null}
+                        {nameUpper}
                       </h3>
                     </div>
-                    <div className="flex min-w-0 flex-col gap-2.5 md:gap-3 md:pt-1">
-                      <p className="font-mono text-[10px] font-extrabold uppercase leading-snug tracking-[0.22em] text-mad-gold sm:text-[11px] sm:tracking-[0.24em] md:text-xs md:tracking-[0.28em]">
-                        {member.title}
-                      </p>
-                      <p className="max-w-xl font-sans text-[0.875rem] font-medium leading-snug text-mad-aaa-body sm:text-[0.9375rem] md:leading-relaxed">
-                        {member.bio}
-                      </p>
-                    </div>
+                    <p className="max-w-xl font-mono text-[10px] font-extrabold uppercase leading-snug tracking-[0.22em] text-mad-gold sm:text-[11px] sm:tracking-[0.24em] md:text-xs md:tracking-[0.28em]">
+                      {member.title}
+                    </p>
+                    <p className="max-w-xl font-sans text-[0.875rem] font-medium leading-snug text-mad-aaa-body sm:text-[0.9375rem] md:leading-relaxed">
+                      {member.bio}
+                    </p>
                   </div>
                 );
               })}

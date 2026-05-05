@@ -136,3 +136,56 @@ export const MORPHING_SERVICES: readonly MorphingServiceItem[] = [
     technicalBadge: "Logic · GTM",
   },
 ] as const;
+
+/** Hero ↔ Team arası What we do bandı — başlık / alt başlık (StickySolutions, ProjectsMobile). */
+export const WHAT_WE_DO_SECTION_COPY = {
+  headlineAccent: "All your marketing needs",
+  headlineRest: "in one single monthly subscription",
+  /** StickySolutions: üç satır ana başlık (ilk satır altın). */
+  headlineStickyLines: [
+    { text: "All your marketing needs", variant: "gold" },
+    { text: "in a single monthly subscription", variant: "highlight" },
+  ],
+} as const;
+
+/** Hero ↔ Team arası What we do · üç pillar (#projects). Servis kartları burada kullanılır; #services ayrı. */
+export type WhatWeDoTrinityId = "ai-creative" | "marfor-strategy" | "growth-engine";
+
+export type WhatWeDoTrinityItem = {
+  id: WhatWeDoTrinityId;
+  title: string;
+  description: string;
+  image: string;
+  imageAlt: string;
+  technicalBadge?: string;
+};
+
+export const WHAT_WE_DO_TRINITY_SERVICES: readonly WhatWeDoTrinityItem[] = [
+  {
+    id: "ai-creative",
+    title: "AI Film Studio",
+    description:
+      "Bypass traditional production friction with hyper-realistic, generative AI cinema designed to fuel your marketing with high-converting, emotion-driven visual assets.",
+    image: "/creative.webp",
+    imageAlt:
+      "AI Film Studio — hyper-realistic generative AI cinema and emotion-driven marketing visuals",
+  },
+  {
+    id: "marfor-strategy",
+    title: "Marfor Systems",
+    description:
+      "Transform raw technical capability into unstoppable market leverage by deploying custom-engineered software and virtual ambassadors that eliminate operational friction from your brand's architecture.",
+    image: "/strategy.webp",
+    imageAlt:
+      "Marfor Systems — custom-engineered software and virtual brand ambassadors that remove operational friction",
+  },
+  {
+    id: "growth-engine",
+    title: "Growth Engine",
+    description:
+      "Dominate the market through an end-to-end performance architecture that synchronizes cinematic visuals and custom software into a frictionless, scalable growth system tailored to your brand's DNA.",
+    image: "/performance.webp",
+    imageAlt:
+      "Growth Engine — performance architecture syncing cinematic creative, software, and scalable brand growth",
+  },
+] as const;

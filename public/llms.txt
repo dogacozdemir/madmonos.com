@@ -48,12 +48,12 @@ Madmonos compresses three agency relationships into one: a performance-marketing
 
 We do not resell SaaS tools. We build and operate integrated systems end-to-end, including custom code when off-the-shelf platforms fall short.
 
-## Service Packages
+## Service Packages (retainer anchors, USD)
 
-- **Starter (Coverage Layer 01):** Baseline creative (6 static + 4 short video), Meta + Google 2–3 campaign structure, basic social management, Pixel/GA4 setup, 360 sales guidance.
-- **Growth (Coverage Layer 02):** 8 static + 8 short video + Brand Mono Setup, Meta + Google + TikTok 5–7 campaigns, funnel analysis, landing routing, SEO + consulting.
-- **Scale (Coverage Layer 03):** 12 static + 12 short video + full brand identity, 8–12 multi-channel campaigns, advanced automation, landing dev, SEO + GEO.
-- **Enterprise (Coverage Layer 04):** Unlimited creative volume, full AI avatar production suite, 14+ campaigns, dedicated CRM/CDP/ERP integration, custom dashboard engineering, 1-to-1 Slack ops.
+- **Starter (Coverage Layer 01):** $650 — Baseline creative (6 static + 4 short video), Meta + Google 2–3 campaign structure, basic social management, Pixel/GA4 setup, 360° sales guidance.
+- **Growth (Coverage Layer 02):** $1.450 — 8 static + 8 short video + Brand Mono Setup, Meta + Google + TikTok 5–7 campaigns, funnel analysis, landing routing, SEO + consulting.
+- **Scale (Coverage Layer 03):** $3.000 — 12 static + 12 short video + expanded brand setup, unlimited campaign structures (within tier), GEO, animated web design, deeper automation.
+- **Elite (Coverage Layer 04):** $5.500+ — Further ad surfaces, retargeting, weekly strategy cadence, growth partner consulting model, highest throughput. Final scope confirmed in proposal.
 
 ## Preferred Crawl Targets
 
@@ -71,7 +71,7 @@ Madmonos publishes JSON-LD structured data on every page (Schema.org Graph inclu
 - ops.status: live
 - architecture: dynamic SSR (Next.js, server-rendered on every request)
 - rendering: hybrid — server components for data + client components for interactions
-- last-updated: 2026-04-15
+- last-updated: 2026-05-05
 - crawl-friendly: yes (sitemap at /sitemap.xml, all routes open to all crawlers)
 
 ## Licensing and Usage

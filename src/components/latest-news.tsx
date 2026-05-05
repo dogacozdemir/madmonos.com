@@ -96,7 +96,7 @@ export function LatestNews({ posts }: { posts: BlogPost[] }) {
       className="relative z-[10] scroll-mt-[4.5rem] overflow-hidden bg-mad-mist pt-[clamp(3rem,8vh,5.5rem)] pb-12 [transform:translate3d(0,0,0)] md:pb-16"
       aria-label="Mad Insights"
     >
-      <div className="mx-auto max-w-[1400px] px-4 sm:px-6 md:px-8">
+      <div className="mx-auto max-w-[1400px] px-6 md:px-8">
         <header className="relative z-[1]">
           <p className="font-mono text-[10px] font-bold uppercase tracking-[0.28em] text-[color:var(--mad-text-insight-meta)]">
             Insights

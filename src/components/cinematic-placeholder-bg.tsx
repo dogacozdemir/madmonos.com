@@ -20,7 +20,7 @@ type Props = {
  */
 export function CinematicPlaceholderBg({
   className,
-  brandImageSrc = "/madmonos.webp",
+  brandImageSrc = "/logo-nav.webp",
   variant = "default",
 }: Props) {
   const [showBrand, setShowBrand] = useState(true);
@@ -45,7 +45,7 @@ export function CinematicPlaceholderBg({
           sizes="100vw"
           priority={isHero}
           loading={isHero ? "eager" : "lazy"}
-          className="mad-cinematic-photo absolute inset-0 h-full w-full object-cover opacity-[0.34] [transform:translate3d(0,0,0)]"
+          className="mad-cinematic-photo absolute inset-0 h-full w-full object-contain object-center opacity-[0.38] [transform:translate3d(0,0,0)] md:opacity-[0.34]"
           onError={() => setShowBrand(false)}
         />
       ) : null}

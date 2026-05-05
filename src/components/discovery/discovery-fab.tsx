@@ -15,6 +15,8 @@ export function DiscoveryFab() {
   const pos = useRef({ x: 0, y: 0 });
   const target = useRef({ x: 0, y: 0 });
   const rafRef = useRef(0);
+  const moveRafRef = useRef(0);
+  const latestMove = useRef<{ x: number; y: number } | null>(null);
 
   useEffect(() => {
     const btn = btnRef.current;
@@ -47,21 +49,31 @@ export function DiscoveryFab() {
 
     const onMove = (e: MouseEvent) => {
       if (!hovering.current) return;
-      const b = btnRef.current;
-      if (!b) return;
-      const r = b.getBoundingClientRect();
-      const cx = r.left + r.width / 2;
-      const cy = r.top + r.height / 2;
-      target.current = {
-        x: (e.clientX - cx) * 0.42,
-        y: (e.clientY - cy) * 0.42,
-      };
-      startLoop();
+      if (!btnRef.current) return;
+      latestMove.current = { x: e.clientX, y: e.clientY };
+      if (moveRafRef.current !== 0) return;
+      moveRafRef.current = requestAnimationFrame(() => {
+        moveRafRef.current = 0;
+        const lm = latestMove.current;
+        if (!lm || !hovering.current || !btnRef.current) return;
+        const r = btnRef.current.getBoundingClientRect();
+        const cx = r.left + r.width / 2;
+        const cy = r.top + r.height / 2;
+        target.current = {
+          x: (lm.x - cx) * 0.42,
+          y: (lm.y - cy) * 0.42,
+        };
+        startLoop();
+      });
     };
 
     window.addEventListener("mousemove", onMove, { passive: true });
     return () => {
       window.removeEventListener("mousemove", onMove);
+      if (moveRafRef.current !== 0) {
+        cancelAnimationFrame(moveRafRef.current);
+        moveRafRef.current = 0;
+      }
       if (rafRef.current !== 0) {
         cancelAnimationFrame(rafRef.current);
         rafRef.current = 0;
@@ -80,7 +92,7 @@ export function DiscoveryFab() {
       aria-haspopup="dialog"
       aria-expanded={isOpen}
       aria-controls="discovery-modal"
-      aria-label="Open request callback form"
+      aria-label="Book a demo"
       onClick={open}
       onMouseEnter={() => {
         hovering.current = true;
@@ -98,12 +110,12 @@ export function DiscoveryFab() {
         }
       }}
       className={cn(
-        "cta-digital-present fixed bottom-6 left-4 z-[70] inline-flex min-h-12 min-w-12 items-center justify-center rounded-full border border-[color:var(--mad-border-highlight-heavy)] px-5 py-3 will-change-transform md:left-auto md:right-8",
+        "cta-digital-present mad-cta-gold-pulse--fab fixed bottom-6 left-4 z-[70] inline-flex min-h-12 min-w-12 items-center justify-center rounded-full border border-[color:var(--mad-border-highlight-heavy)] px-5 py-3 will-change-transform md:left-auto md:right-8",
         "bg-mad-deep text-xs font-extrabold uppercase tracking-[0.2em] text-mad-aaa-gold shadow-[var(--mad-fab-shadow)] backdrop-blur-xl"
       )}
       style={{ transform: "translate3d(0,0,0)" }}
     >
-      Contact
+      Book a demo
     </button>
   );
 }

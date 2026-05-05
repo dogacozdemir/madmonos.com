@@ -1,6 +1,7 @@
+import Image from "next/image";
 import { cn } from "@/lib/utils";
 
-/** Route-level suspense — minimal, matches studio tone. */
+/** Route-level suspense — brand mark instead of anonymous chrome. */
 export default function Loading() {
   return (
     <div
@@ -9,7 +10,17 @@ export default function Loading() {
         "text-mad-highlight [transform:translate3d(0,0,0)]"
       )}
     >
-      <div className="h-10 w-10 animate-pulse rounded-2xl border-2 border-[color:var(--mad-border-gold-strong)] border-t-mad-gold" />
+      <div className="animate-pulse [animation-duration:1.75s]">
+        <Image
+          src="/logo-nav.webp"
+          alt=""
+          width={400}
+          height={510}
+          sizes="96px"
+          className="h-12 w-auto object-contain opacity-90 md:h-14"
+          priority
+        />
+      </div>
       <p className="text-[10px] font-bold uppercase tracking-[0.35em] text-mad-gold">Loading</p>
     </div>
   );

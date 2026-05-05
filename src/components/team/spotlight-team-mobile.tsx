@@ -1,9 +1,10 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import { cn } from "@/lib/utils";
 import { TEAM_MEMBERS } from "@/data/team-spotlight";
+import { trDisplayUpper } from "@/lib/tr-display";
 
 /**
  * Mobile-only team section — CSS scroll-snap portrait carousel, zero GSAP.
@@ -17,7 +18,17 @@ import { TEAM_MEMBERS } from "@/data/team-spotlight";
  */
 export function SpotlightTeamMobile() {
   const trackRef = useRef<HTMLDivElement>(null);
+  const scrollRafRef = useRef(0);
   const [activeIdx, setActiveIdx] = useState(0);
+  const [bioExpanded, setBioExpanded] = useState(false);
+
+  useEffect(() => {
+    setBioExpanded(false);
+  }, [activeIdx]);
+
+  useEffect(() => {
+    return () => cancelAnimationFrame(scrollRafRef.current);
+  }, []);
 
   const scrollTo = (idx: number) => {
     const track = trackRef.current;
@@ -28,15 +39,17 @@ export function SpotlightTeamMobile() {
   };
 
   const onScroll = () => {
-    const track = trackRef.current;
-    if (!track) return;
-    const firstCard = track.children[0] as HTMLElement | undefined;
-    if (!firstCard) return;
-    // Step = actual card width + gap-4 (16px) — NOT clientWidth.
-    // Using clientWidth as the divisor breaks on every viewport where card width ≠ container width.
-    const step = firstCard.offsetWidth + 16;
-    const idx = Math.round(track.scrollLeft / step);
-    setActiveIdx(Math.min(TEAM_MEMBERS.length - 1, Math.max(0, idx)));
+    cancelAnimationFrame(scrollRafRef.current);
+    scrollRafRef.current = requestAnimationFrame(() => {
+      scrollRafRef.current = 0;
+      const track = trackRef.current;
+      if (!track) return;
+      const firstCard = track.children[0] as HTMLElement | undefined;
+      if (!firstCard) return;
+      const step = firstCard.offsetWidth + 16;
+      const idx = Math.round(track.scrollLeft / step);
+      setActiveIdx(Math.min(TEAM_MEMBERS.length - 1, Math.max(0, idx)));
+    });
   };
 
   return (
@@ -45,7 +58,6 @@ export function SpotlightTeamMobile() {
       className="relative z-[24] overflow-hidden bg-mad-void py-16"
       aria-label="Our team — spotlight"
     >
-      {/* Kicker */}
       <p className="px-6 font-mono text-[10px] font-bold uppercase tracking-[0.32em] text-mad-gold">
         Our team
       </p>
@@ -54,7 +66,6 @@ export function SpotlightTeamMobile() {
         The Minds<br />Behind It All
       </h2>
 
-      {/* Portrait carousel — images + name overlay only; bio lives below */}
       <div
         ref={trackRef}
         onScroll={onScroll}
@@ -73,12 +84,10 @@ export function SpotlightTeamMobile() {
             key={member.id}
             aria-label={`${member.name}, ${member.title}`}
             className={cn(
-              "relative shrink-0 snap-start w-[72vw] max-w-[280px]",
+              "relative shrink-0 snap-start w-[76vw] max-w-[304px]",
               "overflow-hidden rounded-2xl",
-              "transition-[opacity,transform] duration-400 ease-out",
-              i === activeIdx
-                ? "opacity-100 scale-100"
-                : "opacity-40 scale-[0.96]"
+              "transition-opacity duration-400 ease-out",
+              i === activeIdx ? "opacity-100" : "opacity-40"
             )}
           >
             <div className="relative aspect-[3/4] w-full overflow-hidden">
@@ -86,7 +95,7 @@ export function SpotlightTeamMobile() {
                 src={member.img}
                 alt={`${member.name}, ${member.title} — Madmonos`}
                 fill
-                sizes="72vw"
+                sizes="76vw"
                 className="object-cover object-top"
                 priority={i === 0}
               />
@@ -98,8 +107,8 @@ export function SpotlightTeamMobile() {
                 <p className="font-mono text-[9px] font-bold uppercase tracking-[0.24em] text-mad-gold">
                   {member.title}
                 </p>
-                <h3 className="mt-1 font-[family-name:var(--font-display)] text-xl font-black uppercase leading-[0.9] tracking-[-0.025em] text-white [text-shadow:0_2px_12px_rgba(0,0,0,0.7)]">
-                  {member.name}
+                <h3 className="mt-1 font-[family-name:var(--font-display)] text-xl font-black leading-[0.9] tracking-[-0.025em] text-white [text-shadow:0_2px_12px_rgba(0,0,0,0.7)]">
+                  {trDisplayUpper(member.name)}
                 </h3>
               </div>
             </div>
@@ -107,7 +116,6 @@ export function SpotlightTeamMobile() {
         ))}
       </div>
 
-      {/* Navigation dots */}
       <div
         className="mt-5 flex justify-center gap-2"
         role="group"
@@ -121,33 +129,57 @@ export function SpotlightTeamMobile() {
             aria-current={i === activeIdx ? "true" : undefined}
             onClick={() => scrollTo(i)}
             className={cn(
-              "h-1.5 rounded-full transition-all duration-300",
-              "focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-mad-gold",
-              i === activeIdx
-                ? "w-6 bg-mad-gold"
-                : "w-1.5 bg-mad-highlight/25 hover:bg-mad-highlight/50"
+              "mad-carousel-dot-hit cursor-pointer",
+              "focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-mad-gold"
             )}
-          />
+          >
+            <span
+              className={cn(
+                "mad-carousel-dot-hit__pill",
+                i === activeIdx
+                  ? "w-6 bg-mad-gold"
+                  : "w-1.5 bg-mad-highlight/25 hover:bg-mad-highlight/50"
+              )}
+              aria-hidden
+            />
+          </button>
         ))}
       </div>
 
-      {/* Bio block — fixed below carousel, always readable, transitions on swipe */}
-      <div className="relative mx-6 mt-6 min-h-[7rem]">
-        {TEAM_MEMBERS.map((member, i) => (
-          <p
-            key={member.id}
-            aria-hidden={i !== activeIdx}
-            className={cn(
-              "text-[0.8125rem] leading-relaxed text-mad-aaa-body",
-              "transition-[opacity,transform] duration-350 ease-out",
-              i === activeIdx
-                ? "relative opacity-100 translate-y-0"
-                : "pointer-events-none absolute inset-0 opacity-0 translate-y-2"
-            )}
-          >
-            {member.bio}
-          </p>
-        ))}
+      <div className="relative mx-6 mt-6">
+        {TEAM_MEMBERS.map((member, i) => {
+          const active = i === activeIdx;
+          return (
+            <div
+              key={member.id}
+              aria-hidden={!active}
+              className={cn(
+                "transition-[opacity,transform] duration-350 ease-out",
+                active
+                  ? "relative opacity-100 translate-y-0"
+                  : "pointer-events-none absolute inset-0 opacity-0 translate-y-2"
+              )}
+            >
+              <p
+                className={cn(
+                  "text-[0.8125rem] leading-relaxed text-mad-aaa-body",
+                  !bioExpanded && "line-clamp-4"
+                )}
+              >
+                {member.bio}
+              </p>
+              <button
+                type="button"
+                tabIndex={active ? undefined : -1}
+                className="mt-2 font-mono text-[10px] font-bold uppercase tracking-[0.18em] text-mad-gold transition-colors hover:text-mad-highlight focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-mad-gold"
+                aria-expanded={bioExpanded}
+                onClick={() => setBioExpanded((e) => !e)}
+              >
+                {bioExpanded ? "Show less" : "Read bio"}
+              </button>
+            </div>
+          );
+        })}
       </div>
     </section>
   );

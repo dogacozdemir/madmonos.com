@@ -1,127 +1,559 @@
 "use client";
 
-import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import { Fragment, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import Image from "next/image";
-import { Activity, Box, Rocket, Shield } from "lucide-react";
+import gsap from "gsap";
 import { cn } from "@/lib/utils";
+import { playGoldBorderFlash } from "@/lib/mad-gold-haptic";
+import { getRetainerTierByPackageId } from "@/lib/package-tier-pricing";
+import { DiscoveryTrigger } from "@/components/discovery/discovery-trigger";
 
-type PackageItem = {
+/* ── Types ──────────────────────────────────────────────────────────────── */
+
+type CatId = "creative" | "performance" | "ops" | "tech" | "consulting";
+
+type Pkg = {
   id: string;
   name: string;
   tier: string;
-  features: string[];
-  deltaNote: string;
-  deltaLines: string[];
-  icon: typeof Shield;
-  quadrant: "top-left" | "top-right" | "bottom-left" | "bottom-right";
+  /** Short commercial line (desktop grid). */
+  priceLine: string;
+  spotlightImage: string;
+  spotlightImageAlt: string;
+  delta: string[] | null;
+  rows: Record<CatId, string[]>;
 };
 
-const PACKAGES: PackageItem[] = [
+/* ── Data ───────────────────────────────────────────────────────────────── */
+
+const CATS: { id: CatId; label: string; hl: boolean }[] = [
+  { id: "creative", label: "Creative", hl: false },
+  { id: "performance", label: "Performance", hl: true },
+  { id: "ops", label: "Operations", hl: false },
+  { id: "tech", label: "Technical", hl: true },
+  { id: "consulting", label: "Consulting", hl: false },
+];
+
+const PKGS: Pkg[] = [
   {
     id: "starter",
     name: "Starter",
-    tier: "Coverage Layer 01",
-    features: [
-      "Creative: 6 Static + 4 Short Video",
-      "Performance: Meta + Google Ads, 2-3 Campaigns, Remarketing",
-      "Operations: Basic SM Management + Weekly Control + Monthly Report",
-      "Technical: Pixel / GA4 Setup + Simple Routing (No Dev)",
-      "Consulting: Basic 360 Sales & Marketing Guidance",
-    ],
-    deltaNote: "Starter is the baseline package.",
-    deltaLines: ["+ Base Creative Core", "+ Base Performance Core"],
-    icon: Shield,
-    quadrant: "top-left",
+    tier: "Layer 01",
+    priceLine: "Pilot engagement",
+    spotlightImage: "/developer.webp",
+    spotlightImageAlt: "Starter system tier — foundational ops and baseline coverage",
+    delta: null,
+    rows: {
+      creative: ["6 Static · 4 Short Videos"],
+      performance: ["Meta + Google Ads", "2–3 Campaigns · Remarketing"],
+      ops: ["SM Management (posts + comments)", "Weekly Monitoring · Monthly Report"],
+      tech: ["Pixel / GA4 Setup", "Basic Routing (no dev)"],
+      consulting: ["Basic 360° Sales & Marketing Advisory"],
+    },
   },
   {
     id: "growth",
     name: "Growth",
-    tier: "Coverage Layer 02",
-    features: [
-      "Creative: 8 Static + 8 Short Video + Brand Mono Setup",
-      "Performance: Meta + Google + TikTok, 5-7 Campaigns + Funnel Analysis",
-      "Operations: SM Management + Weekly Optimization + Strategy Call",
-      "Technical: Pixel / GA4 Setup + Landing Routing + Basic Funnel Guidance",
-      "Consulting: SEO + 360 Sales & Marketing Guidance",
-    ],
-    deltaNote: "Growth adds capacity over Starter.",
-    deltaLines: ["+2 Static", "+4 Short Video", "+ TikTok + Funnel Layer"],
-    icon: Rocket,
-    quadrant: "top-right",
+    tier: "Layer 02",
+    priceLine: "Growth retainer",
+    spotlightImage: "/creative.webp",
+    spotlightImageAlt: "Growth system tier — elevated creative velocity",
+    delta: ["+ TikTok Ads", "+ Brand Mono", "+ Funnel Analysis", "+ SEO"],
+    rows: {
+      creative: ["8 Static · 8 Short Videos", "Brand Mono Setup · 1ST · 1SV"],
+      performance: ["Meta + Google + TikTok Ads", "5–7 Campaigns · Funnel Analysis"],
+      ops: ["SM Management", "2× Weekly Optimization", "Content Plan · Monthly Strategy Call"],
+      tech: ["Pixel / GA4 Setup", "Landing Routing · Funnel Guidance"],
+      consulting: ["SEO", "360° Sales & Marketing Advisory"],
+    },
   },
   {
     id: "scale",
     name: "Scale",
-    tier: "Coverage Layer 03",
-    features: [
-      "Creative: 12 Static + 12 Short Video + Brand Mono Extended",
-      "Performance: Meta + Google + TikTok, Unlimited Campaigns + Creative Testing",
-      "Operations: SM Management + Continuous Optimization + Dashboard Access",
-      "Technical: Pixel / GA4 + Landing Feedback + Animated Web Design",
-      "Consulting: SEO + GEO + 360 Sales & Marketing Guidance",
-    ],
-    deltaNote: "Scale expands over Growth.",
-    deltaLines: ["+4 Static", "+4 Short Video", "+ Unlimited Campaigns"],
-    icon: Activity,
-    quadrant: "bottom-left",
+    tier: "Layer 03",
+    priceLine: "Scale retainer",
+    spotlightImage: "/performance.webp",
+    spotlightImageAlt: "Scale system tier — performance-grade distribution",
+    delta: ["+ Unlimited Campaigns", "+ GEO", "+ Animated Web", "+ 2ST · 2SV"],
+    rows: {
+      creative: ["12 Static · 12 Short Videos", "Brand Mono Setup · 2ST · 2SV"],
+      performance: ["Meta + Google + TikTok Ads", "Unlimited Campaigns · Advanced Funnel"],
+      ops: ["SM Management", "Continuous Optimization", "Content Plan · Monthly Strategy Call"],
+      tech: ["Pixel / GA4 Setup", "Landing Feedback", "Animated Web Design"],
+      consulting: ["SEO · GEO", "360° Sales & Marketing Advisory"],
+    },
   },
   {
-    id: "enterprise",
-    name: "Enterprise",
-    tier: "Coverage Layer 04",
-    features: [
-      "Creative: 16 Static + 16 Short Video + Dual Brand Mono Setup",
-      "Performance: Multi-Channel Ads + Unlimited Campaigns + Retargeting",
-      "Operations: Continuous Optimization + Weekly Strategy Calls",
-      "Technical: Animated Web Design + File-Based SEO/GEO + Integrations",
-      "Consulting: Growth Partner Model + 360 Sales & Marketing Guidance",
-    ],
-    deltaNote: "MarFor extends Scale to enterprise depth.",
-    deltaLines: ["+4 Static", "+4 Short Video", "+ Retargeting + Growth Partner"],
-    icon: Box,
-    quadrant: "bottom-right",
+    id: "elite",
+    name: "Elite",
+    tier: "Layer 04",
+    priceLine: "Partner program",
+    spotlightImage: "/agent.webp",
+    spotlightImageAlt: "Elite system tier — autonomous command surface",
+    delta: ["+ Other Ads", "+ Retargeting", "+ Weekly Call", "+ Growth Partner"],
+    rows: {
+      creative: ["16 Static · 16 Short Videos", "2× Brand Mono Setup · 2ST · 2SV"],
+      performance: ["Meta + Google + TikTok + Other Ads", "Unlimited Campaigns · Retargeting"],
+      ops: ["SM Management", "Continuous Optimization", "Content Plan · Weekly Strategy Call"],
+      tech: ["Pixel / GA4 Setup", "Landing Feedback", "Animated Web Design"],
+      consulting: ["SEO · GEO · Growth Partner Model", "360° Sales & Marketing Advisory"],
+    },
   },
-] as const;
+];
 
-const terminalLinesFromFeatures = (pkg: PackageItem, index: number) => {
-  if (index === 0) {
-    return [
-      `> Initializing ${pkg.name}_Ops...`,
-      `> Baseline layer online.`,
-      ...pkg.deltaLines.map((line) => `> ${line}`),
-      `> ${pkg.name}_Ops :: READY`,
-    ];
+const N = PKGS.length;
+
+const CAROUSEL_GAP_PX = 16;
+
+function flattenCoverage(pkg: Pkg): string[] {
+  const lines: string[] = [];
+  for (const cat of CATS) {
+    lines.push(...pkg.rows[cat.id]);
   }
+  return lines;
+}
 
-  const prevName = PACKAGES[index - 1]?.name ?? "Previous";
-  return [
-    `> Comparing ${pkg.name} vs ${prevName}...`,
-    `> ${pkg.deltaNote}`,
-    ...pkg.deltaLines.map((line) => `> ${line}`),
-    `> Delta map synced.`,
-  ];
-};
+function usePrefersReducedMotion(): boolean {
+  const [reduced, setReduced] = useState(false);
+
+  useEffect(() => {
+    const mql = window.matchMedia("(prefers-reduced-motion: reduce)");
+    const sync = () => setReduced(mql.matches);
+    sync();
+    mql.addEventListener("change", sync);
+    return () => mql.removeEventListener("change", sync);
+  }, []);
+
+  return reduced;
+}
+
+function PackagesTierSpecificationsCrawl() {
+  return (
+    <div id="packages-tier-specifications" className="sr-only">
+      <h2>Madmonos package tiers — full specifications</h2>
+      <p>
+        Starter, Growth, Scale, and Elite tiers with complete coverage lines by category. This block mirrors the
+        interactive packages matrix for search engines, AI systems, and assistive technologies.
+      </p>
+      {PKGS.map((pkg) => (
+        <section key={pkg.id} aria-label={`${pkg.name} tier complete specifications`}>
+          <h3>
+            {pkg.name} — {pkg.tier}
+          </h3>
+          <p>{pkg.priceLine}</p>
+          {(() => {
+            const r = getRetainerTierByPackageId(pkg.id);
+            return r ? <p>Published retainer anchor: {r.priceDisplay} USD.</p> : null;
+          })()}
+          {pkg.delta ? <p>Upgrades versus prior tier: {pkg.delta.join("; ")}.</p> : null}
+          <ul>
+            {flattenCoverage(pkg).map((line) => (
+              <li key={`${pkg.id}-all-${line}`}>{line}</li>
+            ))}
+          </ul>
+          {CATS.map((cat) => (
+            <div key={`${pkg.id}-${cat.id}`}>
+              <h4>{cat.label}</h4>
+              <ul>
+                {pkg.rows[cat.id].map((row) => (
+                  <li key={row}>{row}</li>
+                ))}
+              </ul>
+            </div>
+          ))}
+        </section>
+      ))}
+    </div>
+  );
+}
+
+/** Mobile-only: horizontal snap rail, GSAP 3D pivot, tier avatars, glass detail + CTA. */
+function MobilePackagesGrowthStage() {
+  const reducedMotion = usePrefersReducedMotion();
+  const trackRef = useRef<HTMLDivElement>(null);
+  const pivotRefs = useRef<(HTMLElement | null)[]>([]);
+  const featListRef = useRef<HTMLUListElement>(null);
+  const [activeIdx, setActiveIdx] = useState(0);
+  const [particleFast, setParticleFast] = useState(false);
+  const activeIdxRef = useRef(0);
+  const prevPkgIdx = useRef(0);
+  const pivotPrimed = useRef(false);
+  const featAnimPrimed = useRef(false);
+  const boostTimerRef = useRef<number | undefined>(undefined);
+  const roiWrapRef = useRef<HTMLDivElement>(null);
+  const waveGroupRef = useRef<SVGGElement>(null);
+  const scrollRafRef = useRef(0);
+
+  const scrollTo = (idx: number) => {
+    const track = trackRef.current;
+    if (!track) return;
+    const card = track.children[idx] as HTMLElement | undefined;
+    if (!card) return;
+    card.scrollIntoView({ behavior: "smooth", block: "nearest", inline: "center" });
+  };
+
+  const onScroll = () => {
+    cancelAnimationFrame(scrollRafRef.current);
+    scrollRafRef.current = requestAnimationFrame(() => {
+      scrollRafRef.current = 0;
+      const track = trackRef.current;
+      if (!track) return;
+      const firstCard = track.children[0] as HTMLElement | undefined;
+      if (!firstCard) return;
+      const step = firstCard.offsetWidth + CAROUSEL_GAP_PX;
+      const idx = Math.min(N - 1, Math.max(0, Math.round(track.scrollLeft / step)));
+      if (idx !== activeIdxRef.current) {
+        activeIdxRef.current = idx;
+        setActiveIdx(idx);
+        setParticleFast(true);
+        if (boostTimerRef.current !== undefined) window.clearTimeout(boostTimerRef.current);
+        boostTimerRef.current = window.setTimeout(() => setParticleFast(false), 620);
+      }
+    });
+  };
+
+  useEffect(() => {
+    return () => cancelAnimationFrame(scrollRafRef.current);
+  }, []);
+
+  const meshLayers = useMemo(() => {
+    const gold = 0.085 + activeIdx * 0.038;
+    const orchid = 0.065 + activeIdx * 0.028;
+    return {
+      background:
+        `radial-gradient(ellipse 115% 72% at 50% ${-6 - activeIdx * 3}%, rgba(212,175,55,${gold}) 0%, transparent 54%) , ` +
+        `radial-gradient(ellipse 48% 62% at ${86 + activeIdx * 2}% 108%, rgba(156,112,178,${orchid}) 0%, transparent 56%)`,
+    };
+  }, [activeIdx]);
+
+  const activePkg = PKGS[activeIdx]!;
+  const featureLines = useMemo(() => flattenCoverage(activePkg), [activePkg]);
+
+  useLayoutEffect(() => {
+    const q = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    if (!pivotPrimed.current) {
+      pivotPrimed.current = true;
+      pivotRefs.current.forEach((el, i) => {
+        if (!el) return;
+        if (q || reducedMotion) {
+          gsap.set(el, { scale: i === activeIdx ? 1 : 0.9, opacity: i === activeIdx ? 1 : 0.48 });
+          return;
+        }
+        const is = i === activeIdx;
+        gsap.set(el, {
+          scale: is ? 1 : 0.88,
+          rotationY: i < activeIdx ? 11 : i > activeIdx ? -11 : 0,
+          z: is ? 0 : -26,
+          force3D: true,
+        });
+      });
+      return;
+    }
+
+    const from = prevPkgIdx.current;
+    const dir = activeIdx > from ? 1 : activeIdx < from ? -1 : 0;
+    prevPkgIdx.current = activeIdx;
+
+    pivotRefs.current.forEach((el, i) => {
+      if (!el) return;
+      if (q || reducedMotion) {
+        gsap.to(el, {
+          scale: i === activeIdx ? 1 : 0.9,
+          opacity: i === activeIdx ? 1 : 0.48,
+          duration: 0.28,
+          ease: "power2.out",
+          overwrite: true,
+        });
+        return;
+      }
+      const isActive = i === activeIdx;
+      if (isActive) {
+        gsap.fromTo(
+          el,
+          { rotationY: dir === 0 ? 0 : dir * 16, scale: 0.84, z: -20 },
+          {
+            rotationY: 0,
+            scale: 1,
+            z: 0,
+            duration: 0.56,
+            ease: "power3.out",
+            transformPerspective: 1200,
+            force3D: true,
+            overwrite: true,
+          }
+        );
+      } else {
+        gsap.to(el, {
+          rotationY: i < activeIdx ? 13 : -13,
+          scale: 0.86,
+          z: -34,
+          duration: 0.44,
+          ease: "power2.out",
+          transformPerspective: 1200,
+          force3D: true,
+          overwrite: true,
+        });
+      }
+    });
+  }, [activeIdx, reducedMotion]);
+
+  useLayoutEffect(() => {
+    const ul = featListRef.current;
+    if (!ul) return;
+    const items = ul.querySelectorAll("li");
+    const q = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    if (q || reducedMotion) {
+      gsap.set(items, { opacity: 1, y: 0 });
+      return;
+    }
+    if (!featAnimPrimed.current) {
+      featAnimPrimed.current = true;
+      gsap.set(items, { opacity: 1, y: 0 });
+      return;
+    }
+    gsap.fromTo(
+      items,
+      { opacity: 0, y: 12 },
+      {
+        opacity: 1,
+        y: 0,
+        stagger: 0.036,
+        duration: 0.4,
+        ease: "power2.out",
+        overwrite: "auto",
+      }
+    );
+  }, [activeIdx, reducedMotion]);
+
+  useLayoutEffect(() => {
+    const wrap = roiWrapRef.current;
+    const g = waveGroupRef.current;
+    if (!wrap || !g || reducedMotion) return;
+
+    const ctx = gsap.context(() => {
+      const driftSec = Math.max(7.25, 19.5 - activeIdx * 3.35);
+      const pulseSec = Math.max(0.45, 1.02 - activeIdx * 0.13);
+      gsap.killTweensOf(g);
+      const strokes = g.querySelectorAll(".mad-roi-sine-stroke");
+      gsap.killTweensOf(strokes);
+      gsap.set(g, { x: 0, force3D: true });
+      gsap.to(g, {
+        x: -1200,
+        duration: driftSec,
+        ease: "none",
+        repeat: -1,
+      });
+      gsap.fromTo(
+        strokes,
+        { strokeWidth: 2, opacity: 0.28 },
+        {
+          strokeWidth: 2.75,
+          opacity: 0.52 + activeIdx * 0.045,
+          repeat: -1,
+          yoyo: true,
+          duration: pulseSec,
+          ease: "sine.inOut",
+        }
+      );
+    }, wrap);
+
+    return () => {
+      ctx.revert();
+    };
+  }, [activeIdx, reducedMotion]);
+
+  return (
+    <div
+      className={cn(
+        "relative z-10 flex flex-col md:hidden",
+        "pb-[max(5.5rem,calc(4.25rem+env(safe-area-inset-bottom,0px)))]"
+      )}
+    >
+      <div
+        className="pointer-events-none absolute inset-0 z-0 transition-[opacity] duration-700 ease-out"
+        style={meshLayers}
+        aria-hidden
+      />
+      <div
+        className={cn(
+          "mad-pkg-particle-field absolute inset-0 z-[1] opacity-[0.32] mix-blend-screen transition-[opacity] duration-500",
+          particleFast && "mad-pkg-particle-field--fast opacity-[0.48]"
+        )}
+        aria-hidden
+      />
+      <div
+        ref={roiWrapRef}
+        className="pointer-events-none absolute inset-x-0 bottom-0 top-[18%] z-[1] min-h-[5.5rem] overflow-hidden"
+        role="img"
+        aria-label="ROI growth sine wave; animation runs faster and pulses stronger on Scale and Elite tiers"
+      >
+        <svg
+          className="absolute bottom-0 left-0 h-[5.25rem] w-[min(200%,72rem)] max-w-none [transform:translate3d(0,0,0)]"
+          viewBox="0 0 2400 96"
+          preserveAspectRatio="xMinYMax slice"
+          aria-hidden
+        >
+          <g ref={waveGroupRef} className="will-change-transform [transform:translate3d(0,0,0)]">
+            <path
+              className="mad-roi-sine-stroke"
+              fill="none"
+              stroke="rgba(201,174,85,0.42)"
+              strokeWidth={2}
+              strokeLinecap="round"
+              vectorEffect="non-scaling-stroke"
+              d="M0,52 Q300,12 600,52 T1200,52 T1800,52 T2400,52"
+            />
+            <path
+              className="mad-roi-sine-stroke"
+              fill="none"
+              stroke="rgba(201,174,85,0.42)"
+              strokeWidth={2}
+              strokeLinecap="round"
+              vectorEffect="non-scaling-stroke"
+              transform="translate(1200,0)"
+              d="M0,52 Q300,12 600,52 T1200,52 T1800,52 T2400,52"
+            />
+          </g>
+        </svg>
+      </div>
+
+      <div className="relative z-[2] px-6 pt-4">
+        <p className="font-mono text-[10px] font-bold uppercase tracking-[0.3em] text-mad-gold/90">Growth stage · select tier</p>
+        <p className="mt-1 font-[family-name:var(--font-display)] text-[clamp(1.65rem,6.2vw,2.15rem)] font-bold uppercase leading-[0.92] tracking-[0.02em] text-mad-highlight">
+          Power Levels
+        </p>
+      </div>
+
+      <div
+        ref={trackRef}
+        onScroll={onScroll}
+        role="region"
+        aria-label="Package tiers — horizontal gallery"
+        aria-live="polite"
+        className={cn(
+          "relative z-[2] mt-5 flex snap-x snap-mandatory gap-4 overflow-x-auto px-6 pb-2",
+          "[scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+        )}
+      >
+        {PKGS.map((pkg, i) => {
+          const focused = i === activeIdx;
+          return (
+            <article
+              key={pkg.id}
+              ref={(el) => {
+                pivotRefs.current[i] = el;
+              }}
+              onPointerDown={(e) => playGoldBorderFlash(e.currentTarget)}
+              className={cn(
+                "relative shrink-0 snap-start",
+                "w-[82vw] max-w-[340px]",
+                "[perspective:1200px]",
+                focused ? "z-10" : "z-0",
+                "rounded-t-[1.35rem] will-change-transform [transform-style:preserve-3d]",
+                "min-h-[min(52vh,400px)] border",
+                focused
+                  ? cn("border-[color:var(--mad-gold)]/55 mad-pkg-card-shimmer")
+                  : "border-white/[0.08] opacity-90"
+              )}
+              aria-label={pkg.name}
+            >
+              <div className="absolute inset-0 overflow-hidden rounded-t-[1.35rem]">
+                <Image
+                  src={pkg.spotlightImage}
+                  alt={pkg.spotlightImageAlt}
+                  fill
+                  sizes="82vw"
+                  className="object-cover object-center scale-105"
+                  priority={i === 0}
+                />
+                <div
+                  className="pointer-events-none absolute inset-0"
+                  aria-hidden
+                  style={{
+                    background:
+                      "linear-gradient(to top, rgb(5, 3, 8), rgba(5, 3, 8, 0.65) 50%, rgba(10, 6, 16, 0.2)), radial-gradient(ellipse 80% 50% at 50% 100%, rgba(201,174,85,0.12), transparent 70%)",
+                  }}
+                />
+              </div>
+
+              <div className="relative z-[2] flex min-h-[min(52vh,400px)] flex-col justify-end p-4 pb-5">
+                <div className="rounded-xl border border-white/[0.12] bg-black/25 px-3 py-2 backdrop-blur-md">
+                  <h3 className="font-[family-name:var(--font-display)] text-2xl font-bold uppercase tracking-[0.04em] text-white [text-shadow:0_2px_18px_rgba(0,0,0,0.55)]">
+                    {pkg.name}
+                  </h3>
+                </div>
+              </div>
+            </article>
+          );
+        })}
+      </div>
+
+      <div className="relative z-[2] mt-4 flex justify-center gap-2 px-6" role="group" aria-label="Choose package tier">
+        {PKGS.map((pkg, i) => (
+          <button
+            key={pkg.id}
+            type="button"
+            aria-label={`Go to ${pkg.name}`}
+            aria-current={i === activeIdx ? "true" : undefined}
+            onClick={() => scrollTo(i)}
+            className={cn(
+              "mad-carousel-dot-hit cursor-pointer",
+              "focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-mad-gold"
+            )}
+          >
+            <span
+              className={cn(
+                "mad-carousel-dot-hit__pill",
+                i === activeIdx ? "w-6 bg-mad-gold" : "w-1.5 bg-mad-highlight/25 hover:bg-mad-highlight/45"
+              )}
+              aria-hidden
+            />
+          </button>
+        ))}
+      </div>
+
+      <div className="relative z-[2] mx-4 mt-6 overflow-hidden rounded-t-[1.5rem] border border-[color:var(--mad-gold)]/25 bg-[rgba(8,5,12,0.42)] px-4 py-5 shadow-[0_28px_64px_rgba(0,0,0,0.45)] backdrop-blur-xl supports-[backdrop-filter]:bg-[rgba(8,5,12,0.36)]">
+        <p className="font-mono text-[9px] font-bold uppercase tracking-[0.22em] text-mad-gold/50">Coverage stream · active matrix</p>
+        {activePkg.delta ? (
+          <div className="mt-2 flex flex-wrap gap-1.5">
+            {activePkg.delta.map((d) => (
+              <span
+                key={d}
+                className="rounded-md border border-white/25 bg-white/10 px-2 py-1 font-mono text-[8px] font-bold uppercase tracking-wider text-white/90"
+              >
+                {d}
+              </span>
+            ))}
+          </div>
+        ) : null}
+        <ul ref={featListRef} className="mt-4 max-h-[min(38vh,320px)] space-y-2 overflow-y-auto overscroll-y-contain pr-1 [scrollbar-width:thin]">
+          {featureLines.map((item) => (
+            <li
+              key={`${activePkg.id}-${item}`}
+              className="flex items-start gap-2 border-b border-white/[0.06] pb-2 font-mono text-[11px] leading-snug tracking-[0.02em] text-[rgba(232,214,192,0.9)] last:border-b-0 last:pb-0"
+            >
+              <span className="mt-0.5 shrink-0 text-[color:var(--mad-gold)]/55">▸</span>
+              <span>{item}</span>
+            </li>
+          ))}
+        </ul>
+
+        <DiscoveryTrigger
+          premiumGlow
+          className="relative z-10 mt-6 w-full border-t border-[color:var(--mad-gold)]/15 pt-5 font-mono text-[11px] font-bold uppercase tracking-[0.2em]"
+        >
+          Book a Demo
+        </DiscoveryTrigger>
+      </div>
+    </div>
+  );
+}
+
+/* ── Component ──────────────────────────────────────────────────────────── */
 
 export function TypographyImpactSection() {
-  const sectionRef = useRef<HTMLElement>(null);
-  const stageRef = useRef<HTMLDivElement>(null);
-  const eliteRef = useRef<HTMLHeadingElement>(null);
-  const enginesRef = useRef<HTMLHeadingElement>(null);
-  const gridLayerRef = useRef<HTMLDivElement>(null);
-  const fogLayerRef = useRef<HTMLDivElement>(null);
-  const coreRef = useRef<HTMLDivElement>(null);
-  const cardRefs = useRef<(HTMLElement | null)[]>([]);
-  const terminalRefs = useRef<(HTMLPreElement | null)[]>([]);
+  const [hoveredCol, setHoveredCol] = useState<number | null>(null);
   const [isMobile, setIsMobile] = useState(false);
-  const [reducedMotion] = useState(() =>
-    typeof window !== "undefined"
-      ? window.matchMedia("(prefers-reduced-motion: reduce)").matches
-      : false
-  );
-  const packageTerminals = useMemo(
-    () => PACKAGES.map((pkg, index) => terminalLinesFromFeatures(pkg, index).join("\n")),
-    []
-  );
 
   useEffect(() => {
     const mql = window.matchMedia("(max-width: 767px)");
@@ -131,429 +563,174 @@ export function TypographyImpactSection() {
     return () => mql.removeEventListener("change", sync);
   }, []);
 
-  useLayoutEffect(() => {
-    const section = sectionRef.current;
-    const stage = stageRef.current;
-    const elite = eliteRef.current;
-    const engines = enginesRef.current;
-    const gridLayer = gridLayerRef.current;
-    const fogLayer = fogLayerRef.current;
-    const core = coreRef.current;
-    if (!section || !stage || !elite || !engines || !gridLayer || !fogLayer || !core) {
-      return;
-    }
-
-    const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    if (reduced || isMobile) {
-      terminalRefs.current.forEach((terminal, index) => {
-        if (terminal) terminal.textContent = packageTerminals[index];
-      });
-      return;
-    }
-
-    let rafId = 0;
-    let cancelled = false;
-    let ctx: { revert: () => void } | undefined;
-
-    const raf = requestAnimationFrame(() => {
-      void (async () => {
-        const [{ default: gsap }, { ScrollTrigger }] = await Promise.all([
-          import("gsap"),
-          import("gsap/ScrollTrigger"),
-        ]);
-        if (cancelled) return;
-        gsap.registerPlugin(ScrollTrigger);
-
-    let targetProgress = 0;
-    let frameProgress = 0;
-    const cardMetrics: Array<{ width: number; height: number }> = [];
-
-    const recalcCardMetrics = () => {
-      cardRefs.current.forEach((card, index) => {
-        if (!card) return;
-        cardMetrics[index] = {
-          width: card.clientWidth || 280,
-          height: card.clientHeight || 448,
-        };
-      });
-    };
-
-    ctx = gsap.context(() => {
-      const motionHeavyAllowed = !window.matchMedia("(max-width: 767px)").matches;
-      if (motionHeavyAllowed) {
-        gsap.to(gridLayer, {
-          xPercent: 1.8,
-          yPercent: -1.2,
-          duration: 16,
-          ease: "sine.inOut",
-          repeat: -1,
-          yoyo: true,
-        });
-        gsap.to(fogLayer, {
-          xPercent: 3,
-          yPercent: -2,
-          duration: 12,
-          ease: "sine.inOut",
-          repeat: -1,
-          yoyo: true,
-        });
-      }
-
-      const setFrame = (t: number) => {
-        const progress = gsap.utils.clamp(0, 1, t);
-        const viewportW = window.innerWidth;
-        const isNarrow = viewportW < 760;
-        const isMedium = viewportW >= 760 && viewportW < 1180;
-        const revealStart = 0.12;
-        const reveal = gsap.utils.clamp(0, 1, (progress - revealStart) / (1 - revealStart));
-        const blast = gsap.parseEase("expo.out")(reveal);
-        const depth = -1200 + 1260 * blast;
-
-        elite.style.transform = `translate3d(${-130 * progress}px, ${-20 * progress}px, 0)`;
-        engines.style.transform = `translate3d(${130 * progress}px, ${20 * progress}px, 0)`;
-        gridLayer.style.opacity = String(0.72 + progress * 0.16);
-        fogLayer.style.opacity = String(0.38 + progress * 0.2);
-        const coreFade = 1 - gsap.utils.clamp(0, 1, (progress - 0.02) * 4.4);
-        const coreScale = 0.72 + gsap.utils.clamp(0, 1, progress * 3.2) * 2.1;
-        const coreGlow = gsap.utils.clamp(0, 1, (progress - 0.03) / 0.18);
-        core.style.opacity = String(coreFade);
-        core.style.backgroundColor = "var(--mad-surface-panel-plum)";
-        core.style.boxShadow = `0 0 ${14 + coreGlow * 24}px rgba(92,47,88,${0.14 + coreGlow * 0.46}), 0 0 ${36 + coreGlow * 52}px rgba(74,38,80,${0.08 + coreGlow * 0.3})`;
-        core.style.transform = `translate3d(-50%, -50%, 0) scale(${coreScale})`;
-
-        PACKAGES.forEach((pkg, index) => {
-          const card = cardRefs.current[index];
-          const terminal = terminalRefs.current[index];
-          if (!card) return;
-
-          const layout = isNarrow
-            ? [
-                [0, -1.2],
-                [0, -0.4],
-                [0, 0.4],
-                [0, 1.2],
-              ]
-            : isMedium
-              ? [
-                  [-1.55, -0.45],
-                  [-0.5, 0.45],
-                  [0.5, -0.45],
-                  [1.55, 0.45],
-                ]
-              : [
-                  [-2.05, 0],
-                  [-0.7, 0],
-                  [0.7, 0],
-                  [2.05, 0],
-                ];
-
-          const [xSlot, ySlot] = layout[index] ?? [0, 0];
-          const localReveal = isNarrow
-            ? gsap.utils.clamp(0, 1, (reveal - index * 0.17) / 0.36)
-            : reveal;
-          const localBlast = gsap.parseEase("expo.out")(localReveal);
-          const stageWidth = stage.clientWidth;
-          const stageHeight = stage.clientHeight;
-          const totalCards = PACKAGES.length;
-          const cardWidth = cardMetrics[index]?.width ?? 280;
-          const cardHeight = cardMetrics[index]?.height ?? 448;
-          const sidePadding = 10;
-          const gapFloor = isMedium ? 14 : 20;
-          const usableWidth = Math.max(0, stageWidth - sidePadding * 2);
-          const requiredWidth = cardWidth * totalCards + gapFloor * Math.max(1, totalCards - 1);
-          const fitScale = !isNarrow && requiredWidth > usableWidth ? usableWidth / requiredWidth : 1;
-          const visualCardWidth = cardWidth * fitScale;
-          const equalGap = !isNarrow
-            ? Math.max(gapFloor, (usableWidth - visualCardWidth * totalCards) / Math.max(1, totalCards - 1))
-            : 0;
-          const centerToCenter = visualCardWidth + equalGap;
-          const equalSlot = index - (totalCards - 1) / 2;
-          const equalX = equalSlot * centerToCenter;
-          const rawTx = isNarrow
-            ? (index % 2 === 0 ? -1 : 1) * (1 - localReveal) * 22
-            : gsap.utils.interpolate(0, equalX, localBlast);
-          const rawTy = isNarrow
-            ? ySlot * (36 + localBlast * 118)
-            : ySlot * (54 + localBlast * 72);
-          const maxX = Math.max(0, stageWidth * 0.5 - visualCardWidth * 0.5 - 8);
-          const maxY = Math.max(0, stageHeight * 0.5 - cardHeight * 0.5 - 8);
-          const tx = gsap.utils.clamp(-maxX, maxX, rawTx);
-          const ty = gsap.utils.clamp(-maxY, maxY, rawTy);
-          const rotateY = xSlot * (9 - progress * 6);
-          const rotateX = ySlot * (-6 + localReveal * 4);
-          const scale = Math.max(0.0001, localBlast * fitScale);
-          const opacity = gsap.utils.clamp(0, 1, localBlast * 1.25);
-          card.style.opacity = `${opacity}`;
-          card.style.transform = `translate3d(${tx}px, ${ty}px, ${depth}px) rotateX(${rotateX}deg) rotateY(${rotateY}deg) scale(${scale})`;
-
-          if (terminal) {
-            const terminalProgress = gsap.utils.clamp(0, 1, (progress - index * 0.12) / 0.9);
-            const sample = packageTerminals[index];
-            const charCount = Math.floor(sample.length * terminalProgress);
-            const blinking =
-              terminalProgress < 1 && Math.floor(performance.now() / 350) % 2 === 0 ? "_" : "";
-            terminal.textContent = sample.slice(0, charCount) + blinking;
-          }
-        });
-      };
-
-      const rafLoop = () => {
-        frameProgress += (targetProgress - frameProgress) * 0.16;
-        setFrame(frameProgress);
-        rafId = window.requestAnimationFrame(rafLoop);
-      };
-      rafId = window.requestAnimationFrame(rafLoop);
-
-      const trigger = ScrollTrigger.create({
-        trigger: section,
-        start: "top top",
-        end: "bottom bottom",
-        scrub: true,
-        invalidateOnRefresh: true,
-        onUpdate: (self) => {
-          targetProgress = self.progress;
-        },
-        onRefresh: (self) => {
-          recalcCardMetrics();
-          targetProgress = self.progress;
-          frameProgress = self.progress;
-          setFrame(self.progress);
-        },
-      });
-      recalcCardMetrics();
-      targetProgress = trigger.progress;
-      frameProgress = trigger.progress;
-      setFrame(trigger.progress);
-    }, section);
-
-      })(); // end async IIFE
-    }); // end requestAnimationFrame
-
-    return () => {
-      cancelled = true;
-      cancelAnimationFrame(raf);
-      window.cancelAnimationFrame(rafId);
-      ctx?.revert();
-    };
-  }, [isMobile, packageTerminals]);
+  const headerLabel =
+    hoveredCol !== null ? PKGS[hoveredCol]!.name : "Compare packages · hover a column";
 
   return (
     <section
-      ref={sectionRef}
       id="packages"
-      className="relative overflow-clip border-y border-[color:var(--mad-border-subtle)] bg-mad-deep text-mad-highlight md:min-h-[250vh]"
-      aria-label="Holografik Paket Sahnesi"
+      className="relative z-10 border-b border-[color:var(--mad-border-subtle)] bg-mad-deep pb-10 pt-14 text-mad-highlight md:border-y md:pb-12 md:pt-16"
+      aria-label="Our packages"
     >
-      <div
-        className={cn(
-          "flex w-full items-center justify-center overflow-hidden px-[max(1rem,env(safe-area-inset-left))] sm:px-[max(1.5rem,env(safe-area-inset-left))] md:sticky md:top-0 md:min-h-screen md:px-10 lg:px-12",
-          reducedMotion ? "py-12" : "py-10 md:py-0"
-        )}
-      >
+      <div className="relative flex min-h-0 w-full flex-col max-md:overflow-visible md:overflow-hidden bg-mad-deep">
         <div
-          ref={gridLayerRef}
-          className="pointer-events-none absolute inset-0 z-0 opacity-70"
-          style={{
-            backgroundImage:
-              "radial-gradient(120% 95% at 50% 10%, rgba(212,175,55,0.12) 0%, rgba(212,175,55,0.04) 30%, rgba(26,16,12,0.18) 58%, rgba(16,10,8,0.95) 100%), linear-gradient(180deg, rgba(255,255,255,0.03) 0%, transparent 35%), linear-gradient(90deg, rgba(212,175,55,0.04), transparent 35%, transparent 65%, rgba(212,175,55,0.04))",
-            backgroundSize: "100% 100%, 100% 60%, 100% 100%",
-            backgroundPosition: "50% 50%, 50% 0%, 50% 50%",
-          }}
-          aria-hidden
-        />
-        <div
-          ref={fogLayerRef}
-          className="pointer-events-none absolute inset-[-10%] z-[1] opacity-70 [filter:blur(74px)]"
+          className="pointer-events-none absolute inset-0 z-0"
           style={{
             background:
-              "radial-gradient(circle at 35% 55%, rgba(193,150,103,0.2), transparent 52%), radial-gradient(circle at 72% 40%, rgba(126,94,62,0.16), transparent 48%), radial-gradient(circle at 50% 76%, rgba(90,65,42,0.12), transparent 54%)",
+              "radial-gradient(ellipse 110% 50% at 50% 0%, rgba(212,175,55,0.09) 0%, transparent 58%), " +
+              "radial-gradient(ellipse 50% 65% at 88% 100%, rgba(92,47,88,0.12) 0%, transparent 55%)",
           }}
           aria-hidden
         />
+        <div className="mad-grain pointer-events-none absolute inset-0 z-[1] opacity-[0.055] mix-blend-soft-light" aria-hidden />
 
-        <div className="pointer-events-none absolute inset-x-0 top-0 z-[2] h-28 bg-gradient-to-b from-mad-void/60 to-transparent" aria-hidden />
-        <div className="pointer-events-none absolute left-1/2 top-[14%] z-[4] w-full max-w-[560px] -translate-x-1/2 px-6 text-center">
-        </div>
-        <div
-          ref={coreRef}
-          className="pointer-events-none absolute left-1/2 top-1/2 z-[5] hidden h-9 w-9 -translate-x-1/2 -translate-y-1/2 overflow-hidden rounded-full opacity-100 md:block"
-          aria-hidden
-        >
-          <Image
-            src="/logo-nav.webp"
-            alt=""
-            fill
-            className="object-contain object-center"
-            sizes="36px"
-            priority={false}
-          />
-        </div>
-
-        <h2
-          ref={eliteRef}
-          className={cn(
-            "pointer-events-none absolute left-0 top-0 z-[3] max-w-[min(90vw,14ch)] p-6 sm:p-8 md:max-w-[55%] md:p-10 lg:p-12",
-            "will-change-transform [transform:translate3d(0,0,0)]",
-            "font-[family-name:var(--font-display)] font-light uppercase leading-[0.92] tracking-[0.06em]",
-            "max-md:text-[clamp(1.5rem,8vw,2.5rem)] md:text-[clamp(4rem,10vw,12rem)]",
-            "[-webkit-text-stroke:1px_var(--mad-text-stroke-beautiful)] [-webkit-text-fill-color:transparent]"
-          )}
-        >
-          OUR
-        </h2>
-
-        <h2
-          ref={enginesRef}
-          className={cn(
-            "pointer-events-none absolute bottom-0 right-0 z-[3] max-w-[min(90vw,14ch)] p-6 text-right sm:p-8 md:max-w-[55%] md:p-10 lg:p-12",
-            "will-change-transform [transform:translate3d(0,0,0)]",
-            "font-[family-name:var(--font-display)] font-bold uppercase leading-[0.92] tracking-[0.04em] text-mad-gold",
-            "max-md:text-[clamp(1.5rem,8vw,2.5rem)] md:text-[clamp(4rem,10vw,12rem)]",
-            "[text-shadow:0_0_22px_rgba(255,189,109,0.35)]"
-          )}
-        >
-          PACKAGES
-        </h2>
-
-        <div className="relative z-[4] w-full md:hidden">
-          <div className="mb-6 px-1 sm:px-2">
-            <h3 className="mt-2 max-w-[18ch] font-[family-name:var(--font-display)] text-[clamp(1.3rem,6.8vw,2rem)] font-bold uppercase leading-[1.06] tracking-[-0.03em] text-mad-highlight">
-              Our packages
-            </h3>
+        <div className="relative z-10 shrink-0 px-6 pt-4 md:px-12 md:pt-6">
+          <p className="font-mono text-[11px] font-bold uppercase tracking-[0.28em] text-mad-gold">Coverage Layers · 01 – 04</p>
+          <div className="flex items-baseline justify-between gap-4">
+            <h2 className="mt-1 font-[family-name:var(--font-display)] text-[clamp(2.2rem,5vw,4.25rem)] font-bold uppercase leading-[0.88] tracking-[-0.025em] text-mad-highlight">
+              Our Packages
+            </h2>
+            {!isMobile && (
+              <span className="max-w-[min(100%,14rem)] text-right font-mono text-[11px] leading-snug text-mad-gold/65">{headerLabel}</span>
+            )}
           </div>
 
-          <div className="flex flex-col gap-4 px-1 sm:px-2">
-            {PACKAGES.map((pkg, index) => {
-              const Icon = pkg.icon;
+          <div className="mt-3 hidden flex-wrap justify-end gap-3 md:flex" aria-hidden={isMobile}>
+            {PKGS.map((pkg, i) => (
+              <span
+                key={pkg.id}
+                data-active={hoveredCol === i ? "true" : "false"}
+                className={cn(
+                  "h-[3px] shrink-0 rounded-full transition-[width,background-color] duration-300",
+                  "bg-mad-gold/20 data-[active=true]:bg-mad-gold/70",
+                  "w-5 data-[active=true]:w-10"
+                )}
+              />
+            ))}
+          </div>
+        </div>
+
+        <div className="relative z-10 mt-5 hidden min-h-0 flex-1 flex-col px-6 pb-5 md:flex md:px-12">
+          <div
+            role="presentation"
+            className="grid flex-1 overflow-hidden rounded-xl border border-[rgba(212,175,55,0.13)] shadow-[inset_0_0_0_1px_rgba(212,175,55,0.06)] md:rounded-2xl"
+            style={{
+              gridTemplateColumns: `minmax(10.5rem, 16rem) repeat(${N}, minmax(0, 1fr))`,
+              gridTemplateRows: `auto repeat(${CATS.length}, auto)`,
+              gap: 0,
+              alignContent: "start",
+            }}
+            onMouseLeave={() => setHoveredCol(null)}
+          >
+            <div
+              aria-hidden
+              className="border-b border-r border-[rgba(212,175,55,0.13)] bg-[rgba(212,175,55,0.04)] pb-3 pt-4"
+            />
+            {PKGS.map((pkg, pi) => (
+              <div
+                key={pkg.id}
+                data-col={pi}
+                data-active={hoveredCol === pi ? "true" : "false"}
+                role="presentation"
+                onMouseEnter={() => setHoveredCol(pi)}
+                className={cn(
+                  "border-b border-[rgba(212,175,55,0.13)] pb-3 pt-4 opacity-100",
+                  pi < N - 1 && "border-r border-[rgba(212,175,55,0.13)]",
+                  pi === 0 ? "pl-2 pr-3 sm:pl-2.5 sm:pr-4" : "px-3 sm:px-4",
+                  "bg-[rgba(212,175,55,0.04)]",
+                  "transition-[border-color,background-color,box-shadow,filter] duration-300",
+                  "data-[active=true]:brightness-[1.06] data-[active=true]:[box-shadow:inset_0_0_0_1px_rgba(212,175,55,0.35),inset_0_-6px_32px_-8px_rgba(212,175,55,0.12)] data-[active=true]:[background-image:linear-gradient(180deg,rgba(212,175,55,0.14),rgba(212,175,55,0.065))]"
+                )}
+              >
+                <h3 className="mt-0 text-center font-[family-name:var(--font-display)] text-[clamp(1.05rem,1.85vw,1.65rem)] font-bold uppercase leading-tight tracking-[0.04em] text-mad-highlight">
+                  {pkg.name}
+                </h3>
+                <p className="mad-price-glow mt-1 text-center font-mono text-[9px] font-bold uppercase tracking-[0.12em] text-mad-gold">
+                  {pkg.priceLine}
+                </p>
+                <div className="mt-2 flex min-h-[1.5rem] flex-wrap justify-center gap-1">
+                  {pkg.delta ? (
+                    pkg.delta.map((d) => (
+                      <span
+                        key={d}
+                        className="rounded-full border border-white/20 bg-white/10 px-2 py-[3px] font-mono text-[9px] leading-4 text-white/90"
+                      >
+                        {d}
+                      </span>
+                    ))
+                  ) : (
+                    <span className="font-mono text-[9px] text-mad-aaa-body/30">Baseline</span>
+                  )}
+                </div>
+              </div>
+            ))}
+
+            {CATS.map((cat, ci) => {
+              const isLast = ci === CATS.length - 1;
               return (
-                <div
-                  key={pkg.id}
-                  className="rounded-2xl border border-[color:var(--mad-border-gold-dim)] bg-[color:var(--mad-surface-panel-plum)] px-5 py-5 shadow-[var(--mad-shadow-elevated)] [transform:translate3d(0,0,0)]"
-                >
-                  <div className="flex items-start justify-between gap-3">
-                    <div>
-                      <p className="font-mono text-[10px] font-bold uppercase tracking-[0.19em] text-mad-aaa-gold">
-                        {`${String(index + 1).padStart(2, "0")} · ${pkg.tier}`}
-                      </p>
-                      <h4 className="mt-1.5 font-[family-name:var(--font-display)] text-[clamp(1.1rem,5vw,1.4rem)] font-bold uppercase leading-tight tracking-[-0.01em] text-mad-highlight">
-                        {pkg.name}
-                      </h4>
-                    </div>
-                    <span className="shrink-0 rounded-full border border-mad-gold/30 bg-mad-gold/5 p-2 text-mad-gold">
-                      <Icon size={16} aria-hidden />
+                <Fragment key={cat.id}>
+                  <div
+                    className={cn(
+                      "flex min-h-[2.75rem] min-w-0 items-center justify-end border-b border-r border-[rgba(212,175,55,0.13)] py-2 pl-1 pr-2 sm:py-2.5 sm:pl-2 sm:pr-2.5",
+                      cat.hl
+                        ? "bg-[rgba(212,175,55,0.052)] ring-1 ring-inset ring-[rgba(212,175,55,0.12)]"
+                        : "bg-[rgba(255,255,255,0.011)]",
+                      isLast && "rounded-none border-b-0"
+                    )}
+                  >
+                    <span
+                      className={cn(
+                        "max-w-full text-right whitespace-normal break-words font-mono text-[10px] font-bold uppercase leading-snug tracking-[0.12em] sm:text-[11px] sm:tracking-[0.14em]",
+                        cat.hl ? "text-mad-gold" : "text-[rgba(180,160,140,0.65)]",
+                        cat.id === "performance" && "tracking-[0.085em]"
+                      )}
+                      style={{ overflowWrap: "anywhere", wordBreak: "normal" }}
+                    >
+                      {cat.label}
                     </span>
                   </div>
-                  <ul className="mt-4 space-y-2.5">
-                    {pkg.features.map((feature) => (
-                      <li
-                        key={feature}
-                        className="flex items-start gap-2 text-[11px] font-medium leading-snug text-mad-aaa-primary sm:text-xs"
-                      >
-                        <span className="mt-[1px] shrink-0 text-mad-aaa-gold" aria-hidden>
-                          →
-                        </span>
-                        <span>{feature}</span>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              );
-            })}
-          </div>
-        </div>
 
-        <div
-          ref={stageRef}
-          className="relative z-[4] hidden h-[min(82vh,760px)] w-full max-w-[1200px] [perspective:1800px] md:block"
-        >
-          <div
-            className={cn(
-              "h-full w-full",
-              reducedMotion
-                ? "grid grid-cols-1 gap-8 py-6 sm:grid-cols-2 sm:gap-10"
-                : "relative [transform-style:preserve-3d]"
-            )}
-          >
-            {PACKAGES.map((pkg, index) => {
-              const Icon = pkg.icon;
-              return (
-                <article
-                  key={pkg.id}
-                  ref={(el) => {
-                    cardRefs.current[index] = el;
-                  }}
-                  className={cn(
-                    "group overflow-hidden border-[0.5px] border-mad-gold/20 text-left text-[#f6e8d2] shadow-[0_24px_72px_rgba(0,0,0,0.5)] transition-[border-color,box-shadow] duration-300 hover:border-mad-gold/50 hover:shadow-[0_0_20px_rgba(212,175,55,0.1)]",
-                    "bg-mad-deep/40 [background-image:radial-gradient(circle_at_top,rgba(212,175,55,0.05),transparent_58%)] backdrop-blur-xl",
-                    reducedMotion
-                      ? "relative aspect-[10/16] min-h-[380px] rounded-2xl p-7 opacity-100"
-                      : "absolute left-1/2 top-1/2 aspect-[10/16] w-[clamp(180px,24vw,340px)] -translate-x-1/2 -translate-y-1/2 rounded-2xl p-4 sm:p-5 lg:p-7 opacity-0 will-change-transform"
-                  )}
-                >
-                  <div className="pointer-events-none absolute inset-0 opacity-45">
-                    <div className="absolute inset-0 [background:repeating-linear-gradient(90deg,rgba(255,205,143,0.08)_0_1px,transparent_1px_14px)]" />
-                    <div className="absolute inset-0 [background:linear-gradient(180deg,rgba(255,219,167,0.24),transparent_38%)]" />
-                  </div>
-
-                  <div className="relative z-[1] flex h-full min-h-0 flex-col">
-                    <div className="flex items-start justify-between">
-                      <div>
-                        <p className="font-mono text-xs uppercase tracking-[0.2em] text-mad-gold/70">
-                          {pkg.tier}
-                        </p>
-                        <h3 className="mt-1 font-[family-name:var(--font-display)] text-[clamp(1.45rem,2.5vw,2.2rem)] uppercase leading-none tracking-[0.2em] text-mad-gold">
-                          {pkg.name}
-                        </h3>
-                      </div>
-                      <span className="rounded-full border border-mad-gold/30 bg-mad-gold/5 px-2 py-1 text-[10px] text-mad-gold">
-                        <Icon size={17} aria-hidden />
-                      </span>
+                  {PKGS.map((pkg, pi) => (
+                    <div
+                      key={`${pkg.id}-${cat.id}`}
+                      data-col={pi}
+                      data-active={hoveredCol === pi ? "true" : "false"}
+                      role="presentation"
+                      onMouseEnter={() => setHoveredCol(pi)}
+                      className={cn(
+                        "flex min-h-[2.75rem] min-w-0 flex-col justify-center border-b border-[rgba(212,175,55,0.13)] py-2 opacity-100 sm:py-2.5",
+                        pi < N - 1 && "border-r border-[rgba(212,175,55,0.13)]",
+                        pi === 0 ? "pl-2 pr-3 sm:pl-2.5 sm:pr-3.5" : "px-3 sm:px-4",
+                        isLast && "border-b-0",
+                        cat.hl ? "bg-[rgba(212,175,55,0.052)] ring-1 ring-inset ring-[rgba(212,175,55,0.08)]" : "bg-[rgba(255,255,255,0.011)]",
+                        "transition-[border-color,background-color,filter,box-shadow] duration-300",
+                        "data-[active=true]:brightness-[1.05] data-[active=true]:[box-shadow:inset_0_0_0_1px_rgba(212,175,55,0.22)] data-[active=true]:[background-image:linear-gradient(180deg,rgba(212,175,55,0.08),transparent)] data-[active=true]:[background-blend-mode:overlay]"
+                      )}
+                    >
+                      <ul className="flex h-full min-w-0 flex-col items-center justify-center space-y-1.5 text-center">
+                        {pkg.rows[cat.id].map((item) => (
+                          <li
+                            key={item}
+                            className={cn(
+                              "w-full px-0.5 font-mono text-[13px] leading-snug md:text-[13.5px]",
+                              cat.hl ? "text-mad-gold/92" : "text-[rgba(228,212,192,0.88)]"
+                            )}
+                          >
+                            {item}
+                          </li>
+                        ))}
+                      </ul>
                     </div>
-
-                    <ul className="mt-4 max-h-[32%] space-y-1.5 overflow-y-auto text-xs leading-relaxed text-mad-gold/70 sm:text-sm">
-                      {pkg.features.map((feature) => (
-                        <li key={feature} className="flex items-start gap-2">
-                          <span className="mt-[1px] text-mad-gold/70">+</span>
-                          <span>{feature}</span>
-                        </li>
-                      ))}
-                    </ul>
-
-                    <pre
-                      ref={(el) => {
-                        terminalRefs.current[index] = el;
-                      }}
-                      className="mt-4 min-h-0 flex-1 overflow-y-auto whitespace-pre-wrap rounded-xl border border-mad-gold/20 bg-[#0f0a07]/70 p-3 font-mono text-[11px] leading-relaxed text-cyan-500/50"
-                      aria-hidden
-                    />
-                  </div>
-
-                  <div
-                    className="pointer-events-none absolute inset-x-0 top-0 h-[1px] bg-gradient-to-r from-transparent via-mad-gold/40 to-transparent opacity-70"
-                    style={{ animation: `mad-pack-scan 2.8s linear ${index * 0.34}s infinite` }}
-                    aria-hidden
-                  />
-                </article>
+                  ))}
+                </Fragment>
               );
             })}
           </div>
         </div>
+
+        <MobilePackagesGrowthStage />
+        <PackagesTierSpecificationsCrawl />
       </div>
-      <style jsx>{`
-        @keyframes mad-pack-scan {
-          0% {
-            transform: translateY(0);
-            opacity: 0;
-          }
-          15% {
-            opacity: 0.85;
-          }
-          100% {
-            transform: translateY(420px);
-            opacity: 0;
-          }
-        }
-      `}</style>
     </section>
   );
 }

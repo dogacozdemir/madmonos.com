@@ -6,8 +6,10 @@ import {
   SITE_NAME,
   SITE_URL,
   SITE_OG_IMAGE,
+  SITE_LOGO_URL,
   getOrgSameAs,
 } from "@/lib/site";
+import { PACKAGE_RETAINER_TIERS } from "@/lib/package-tier-pricing";
 
 const absoluteUrl = (path: string) =>
   path.startsWith("http") ? path : `${SITE_URL}${path.startsWith("/") ? path : `/${path}`}`;
@@ -35,6 +37,10 @@ const GEO_FAQ_ENTRIES = [
   {
     name: "How can teams contact Madmonos?",
     text: "Email hello@madmonos.com for new business, partnerships, or project inquiries.",
+  },
+  {
+    name: "What do Madmonos package tiers Starter, Growth, Scale, and Elite include, and what are the published retainer anchors?",
+    text: "Published monthly retainer anchors (USD, confirm final scope in proposal): Starter Layer 01 $650, Growth Layer 02 $1.450, Scale Layer 03 $3.000, Elite Layer 04 $5.500+. Starter is the pilot tier with baseline creative volumes, Meta and Google ads, social management, and foundational technical setup. Growth expands to TikTok, stronger brand systems, funnel analysis, and SEO. Scale adds unlimited campaign structures, GEO, animated web design, and deeper creative throughput. Elite adds further ad surfaces, retargeting, a weekly strategy cadence, and a growth partner consulting model. The homepage packages section lists every line item by category for each tier; the same information is repeated in machine-readable page copy and JSON-LD Offer items.",
   },
   {
     name: "What proof of work does Madmonos publish on its homepage?",
@@ -189,6 +195,26 @@ type ItemListProjectsLd = {
   }[];
 };
 
+type PackageTierOffersLd = {
+  "@type": "ItemList";
+  "@id": string;
+  name: string;
+  numberOfItems: number;
+  itemListElement: readonly {
+    "@type": "ListItem";
+    position: number;
+    item: {
+      "@type": "Offer";
+      name: string;
+      description: string;
+      price: string;
+      priceCurrency: string;
+      url: string;
+      seller: { "@id": string };
+    };
+  }[];
+};
+
 type ProjectCreativeLd = {
   "@type": readonly ["Project", "CreativeWork"];
   "@id": string;
@@ -213,6 +239,7 @@ type JsonLdGraph = readonly (
   | BreadcrumbListLd
   | ItemListServicesLd
   | ItemListProjectsLd
+  | PackageTierOffersLd
   | ProjectCreativeLd
 )[];
 
@@ -271,8 +298,8 @@ export function StructuredData() {
     url: SITE_URL,
     logo: {
       "@type": "ImageObject" as const,
-      url: SITE_OG_IMAGE,
-      caption: "Madmonos low-poly gorilla mark and wordmark",
+      url: SITE_LOGO_URL,
+      caption: "Madmonos logo mark",
     },
     description: SITE_DESCRIPTION,
     slogan: "AI-first, end-to-end marketing accelerated by elite engineering capacity.",
@@ -403,6 +430,25 @@ export function StructuredData() {
         },
       })),
     } satisfies FAQPageLd,
+    {
+      "@type": "ItemList",
+      "@id": `${SITE_URL}/#package-retainer-tiers`,
+      name: "Madmonos package tiers — published retainer anchors (USD)",
+      numberOfItems: PACKAGE_RETAINER_TIERS.length,
+      itemListElement: PACKAGE_RETAINER_TIERS.map((t, i) => ({
+        "@type": "ListItem" as const,
+        position: i + 1,
+        item: {
+          "@type": "Offer" as const,
+          name: `${t.name} — ${t.layer}`,
+          description: `${t.notes} Display notation: ${t.priceDisplay} ${t.priceCurrency}.`,
+          price: t.schemaPrice,
+          priceCurrency: t.priceCurrency,
+          url: `${SITE_URL}/#packages`,
+          seller: { "@id": organizationId },
+        },
+      })),
+    } satisfies PackageTierOffersLd,
     {
       "@type": "BreadcrumbList",
       "@id": `${SITE_URL}/#breadcrumb`,

@@ -37,7 +37,9 @@ export function SystemPulse({ syncedAt }: Props) {
               className="inline-block h-[5px] w-[5px] shrink-0 rounded-full bg-emerald-400 [animation:mad-pulse-dot_2.4s_ease-in-out_infinite] motion-reduce:[animation:none]"
               aria-hidden
             />
-            <span className="text-emerald-400/75">AI Engine: Active</span>
+            <span className="text-[#d1fae5]">
+              AI Engine: Active
+            </span>
           </span>
 
           <span
@@ -64,9 +66,9 @@ export function SystemPulse({ syncedAt }: Props) {
         </div>
 
         {/* Request-scoped sync timestamp */}
-        <p className="font-mono text-[10px] font-medium tracking-[0.16em] text-mad-aaa-body/35">
+        <p className="font-mono text-[10px] font-medium tracking-[0.16em] text-slate-200">
           Last Sync:{" "}
-          <time dateTime={syncedAt} className="text-mad-aaa-body/55">
+          <time dateTime={syncedAt} className="text-slate-100">
             {timeStr} UTC
           </time>
         </p>
